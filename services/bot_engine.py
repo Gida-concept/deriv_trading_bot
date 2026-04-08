@@ -250,7 +250,7 @@ class BotEngine:
                 symbol = sig['symbol']
 
                 confidence = sig['confidence']
-                if confidence < 55:
+                if confidence < 50:  # Lowered threshold to match signal engine
                     logger.info(f"{symbol}: Signal confidence too low ({confidence}%), skipping")
                     self._processed_signal_ids.add(sig['id'])
                     continue
