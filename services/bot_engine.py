@@ -52,7 +52,7 @@ class BotEngine:
         self.demo_live_mode = 'demo'
         self.stake_amount = 10.0
         self.risk_percentage = 5.0
-        self.leverage = 10
+        self.leverage = 20
         self.take_profit_percent = 3.0
         self.stop_loss_percent = 2.5
         self.max_concurrent_positions = 1
