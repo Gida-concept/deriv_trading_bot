@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Login</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .auth-page { padding-top: 5rem; padding-bottom: 5rem; }
+    </style>
+</head>
+<body>
+    <!-- Simplified Nav (Unauthenticated) -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/login" class="nav-link active">Login</a>
+                <a href="/register" class="nav-link">Register</a>
+                <a href="/reset_request" class="nav-link">Reset</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">B</div>
+                <h1>Welcome Back</h1>
+                <p>Sign in to your trading account</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <form class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                        <i data-lucide="mail" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="input-toggle" onclick="togglePassword('password')">Show</button>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+                    <a href="/reset_request" style="font-size:0.875rem;color:var(--accent)">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span id="loginSpinner" style="display:none" class="spinner spinner-sm"></span>
+                    <span id="loginText">Sign In</span>
+                </button>
+            </form>
+
+            <div class="auth-footer-links">
+                Don't have an account? <a href="/register">Create one</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            const btn = input.nextElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Show';
+            }
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const icons = { success: 'check-circle', error: 'alert-circle', warning: 'alert-triangle', info: 'info' };
+            container.innerHTML = `<div class="alert alert-${type}"><i data-lucide="${icons[type]}"></i><span>${message}</span></div>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const spinner = document.getElementById('loginSpinner');
+            const text = document.getElementById('loginText');
+
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            text.textContent = 'Signing in...';
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value.trim(),
+                        password: document.getElementById('password').value
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    showAlert('error', result.message || 'Login failed');
+                }
+            } catch (error) {
+                showAlert('error', 'Connection error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                text.textContent = 'Sign In';
+            }
+        });
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    </script>
+</body>
+</html>

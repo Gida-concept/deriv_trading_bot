@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Admin Panel</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-sidebar-header">
+                <a href="/admin/panel" class="admin-sidebar-logo">
+                    <img src="https://images.scalebranding.com/quadrant-horse-p-logo-489b84ce-3efc-49f6-b00b-d5a029865810.jpg" alt="Quadrant" style="height:40px;width:auto;border-radius:8px"> Admin
+                </a>
+            </div>
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/panel" class="admin-nav-link active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/admin/users" class="admin-nav-link"><i data-lucide="users"></i> Manage Users</a>
+                <a href="/admin/settings" class="admin-nav-link"><i data-lucide="settings"></i> System Settings</a>
+                <a href="/admin/logs" class="admin-nav-link"><i data-lucide="file-text"></i> Audit Logs</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">A</div>
+                    <div class="admin-user-details">
+                        <div class="admin-user-name">Admin</div>
+                        <div class="admin-user-role">Super Admin</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:1rem">
+                    <button class="admin-mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">
+                        <i data-lucide="menu" style="width:24px;height:24px"></i>
+                    </button>
+                    <h1 class="admin-topbar-title"><i data-lucide="bar-chart-3"></i> System Overview</h1>
+                </div>
+                <div class="admin-topbar-actions">
+                    <span style="font-size:0.75rem;color:var(--text-muted)">Last updated: <span id="lastUpdate">--</span></span>
+                    <button id="logoutBtn" class="btn btn-ghost"><i data-lucide="log-out"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <!-- Health Status -->
+                <div class="admin-health-card">
+                    <div class="admin-health-dot healthy" id="healthDot"></div>
+                    <div class="admin-health-info">
+                        <h4 id="healthStatus">System Online</h4>
+                        <p id="healthDetail">All services operational</p>
+                    </div>
+                    <div style="margin-left:auto">
+                        <span class="badge badge-success"><span class="badge-dot animated"></span> HEALTHY</span>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="admin-metrics-grid">
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon blue"><i data-lucide="users"></i></div>
+                        <div class="admin-metric-label">TOTAL USERS</div>
+                        <div class="admin-metric-value" id="totalUsers">0</div>
+                        <div class="admin-metric-change neutral">All registered accounts</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon green"><i data-lucide="bot"></i></div>
+                        <div class="admin-metric-label">ACTIVE BOTS</div>
+                        <div class="admin-metric-value" id="activeBots">0</div>
+                        <div class="admin-metric-change neutral">Currently running</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon amber"><i data-lucide="trending-up"></i></div>
+                        <div class="admin-metric-label">SYSTEM VOLUME</div>
+                        <div class="admin-metric-value" id="systemVolume">$0.00</div>
+                        <div class="admin-metric-change neutral">Total PnL (All Time)</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon red"><i data-lucide="activity"></i></div>
+                        <div class="admin-metric-label">24H PnL</div>
+                        <div class="admin-metric-value" id="tradingDayPnl">$0.00</div>
+                        <div class="admin-metric-change neutral" id="tradingDayChange">Win Rate: 0%</div>
+                    </div>
+                </div>
+
+                <!-- Recent Trade Activity -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i data-lucide="clock"></i> Recent Trade Activity</div>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>TIME</th>
+                                    <th>USER</th>
+                                    <th>SYMBOL</th>
+                                    <th>SIDE</th>
+                                    <th>STAKE</th>
+                                    <th>PnL</th>
+                                    <th>STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentActivityTable">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <i data-lucide="inbox" class="empty-state-icon"></i>
+                                            <div class="empty-state-title">No recent trades</div>
+                                            <div class="empty-state-text">Trade activity will appear here once users start trading.</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const mobileToggle = document.getElementById('mobileToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const totalUsersEl = document.getElementById('totalUsers');
+            const activeBotsEl = document.getElementById('activeBots');
+            const systemVolumeEl = document.getElementById('systemVolume');
+            const tradingDayPnlEl = document.getElementById('tradingDayPnl');
+            const tradingDayChangeEl = document.getElementById('tradingDayChange');
+            const recentActivityTable = document.getElementById('recentActivityTable');
+            const lastUpdateEl = document.getElementById('lastUpdate');
+            const healthDot = document.getElementById('healthDot');
+            const healthStatus = document.getElementById('healthStatus');
+            const healthDetail = document.getElementById('healthDetail');
+
+            let pollingInterval = null;
+            const CONFIG = { apiBaseUrl: '/api/admin', pollingIntervalMs: 5000 };
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile sidebar toggle
+            mobileToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+
+            // Close sidebar on outside click (mobile)
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 1024 && !sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            });
+
+            // Fetch global stats
+            async function fetchGlobalStats() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/global`);
+                    const result = await response.json();
+
+                    if (result.success && result.global_statistics) {
+                        const stats = result.global_statistics;
+                        totalUsersEl.textContent = stats.total_registered_users || 0;
+                        activeBotsEl.textContent = stats.active_bots || 0;
+                        systemVolumeEl.textContent = formatCurrency(stats.total_pnl || 0);
+                        tradingDayPnlEl.textContent = formatCurrency(stats.recent_24h?.pnl || 0);
+
+                        const winRate = stats.win_rate_percent || 0;
+                        tradingDayChangeEl.textContent = `Win Rate: ${winRate.toFixed(1)}%`;
+                        tradingDayChangeEl.className = winRate >= 50 ? 'admin-metric-change positive' : 'admin-metric-change negative';
+
+                        lastUpdateEl.textContent = new Date().toLocaleTimeString();
+
+                        // Health check
+                        healthDot.className = 'admin-health-dot healthy';
+                        healthStatus.textContent = 'System Online';
+                        healthDetail.textContent = 'All services operational';
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch global stats:', error);
+                    healthDot.className = 'admin-health-dot unhealthy';
+                    healthStatus.textContent = 'Connection Error';
+                    healthDetail.textContent = 'Unable to reach backend services';
+                }
+            }
+
+            // Fetch recent trades
+            async function fetchRecentActivity() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/trades?limit=50`);
+                    const result = await response.json();
+                    if (result.success && result.trades) displayRecentActivity(result.trades);
+                } catch (error) { console.error('Failed to fetch trades:', error); }
+            }
+
+            function displayRecentActivity(trades) {
+                if (!trades || trades.length === 0) {
+                    recentActivityTable.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="inbox" class="empty-state-icon"></i><div class="empty-state-title">No recent trades</div><div class="empty-state-text">Trade activity will appear here once users start trading.</div></div></td></tr>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                recentActivityTable.innerHTML = trades.map(trade => {
+                    const time = trade.opened_at ? new Date(trade.opened_at).toLocaleString() : '-';
+                    const side = (trade.contract_type || '').toUpperCase();
+                    const sideColor = side === 'LONG' ? 'var(--success)' : side === 'SHORT' ? 'var(--danger)' : 'var(--text-muted)';
+                    const pnl = parseFloat(trade.profit_loss || 0);
+                    const pnlColor = pnl >= 0 ? 'var(--success)' : 'var(--danger)';
+                    const status = trade.status === 'won' ? 'badge-success' : trade.status === 'lost' ? 'badge-danger' : 'badge-neutral';
+                    const statusText = trade.status === 'won' ? 'WIN' : trade.status === 'lost' ? 'LOSS' : (trade.status || 'PENDING').toUpperCase();
+                    return `<tr>
+                        <td class="text-mono">${time}</td>
+                        <td>${trade.email || '---'}</td>
+                        <td class="text-mono">${trade.symbol || '-'}</td>
+                        <td style="color:${sideColor};font-weight:600">${side}</td>
+                        <td class="text-mono">$${parseFloat(trade.stake_amount || 0).toFixed(2)}</td>
+                        <td style="color:${pnlColor};font-weight:600">$${pnl.toFixed(2)}</td>
+                        <td><span class="badge ${status}">${statusText}</span></td>
+                    </tr>`;
+                }).join('');
+            }
+
+            function formatCurrency(value) {
+                const abs = Math.abs(value);
+                const formatted = abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return `${value < 0 ? '-' : ''}$${formatted}`;
+            }
+
+            // Start polling
+            function startPolling() {
+                clearInterval(pollingInterval);
+                pollingInterval = setInterval(() => { fetchGlobalStats(); fetchRecentActivity(); }, CONFIG.pollingIntervalMs);
+            }
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to logout?')) return;
+                try {
+                    const response = await fetch('/auth/logout', { method: 'POST' });
+                    if (response.ok) window.location.href = '/admin/login';
+                } catch (error) { console.error('Logout error:', error); }
+            });
+
+            // Initialize
+            async function initialize() {
+                await fetchGlobalStats();
+                await fetchRecentActivity();
+                startPolling();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                console.log('Admin Panel initialized');
+            }
+
+            initialize();
+            window.addEventListener('beforeunload', () => clearInterval(pollingInterval));
+        })();
+    </script>
+</body>
+</html>

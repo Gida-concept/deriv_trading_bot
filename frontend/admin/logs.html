@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Audit Logs</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-sidebar-header">
+                <a href="/admin/panel" class="admin-sidebar-logo">
+                    <img src="https://images.scalebranding.com/quadrant-horse-p-logo-489b84ce-3efc-49f6-b00b-d5a029865810.jpg" alt="Quadrant" style="height:40px;width:auto;border-radius:8px"> Admin
+                </a>
+            </div>
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/panel" class="admin-nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/admin/users" class="admin-nav-link"><i data-lucide="users"></i> Manage Users</a>
+                <a href="/admin/settings" class="admin-nav-link"><i data-lucide="settings"></i> System Settings</a>
+                <a href="/admin/logs" class="admin-nav-link active"><i data-lucide="file-text"></i> Audit Logs</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">A</div>
+                    <div class="admin-user-details">
+                        <div class="admin-user-name">Admin</div>
+                        <div class="admin-user-role">Super Admin</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:1rem">
+                    <button class="admin-mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">
+                        <i data-lucide="menu" style="width:24px;height:24px"></i>
+                    </button>
+                    <h1 class="admin-topbar-title"><i data-lucide="file-text"></i> Audit Logs</h1>
+                </div>
+                <div class="admin-topbar-actions">
+                    <div class="admin-search">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchInput" placeholder="Search logs...">
+                    </div>
+                    <select id="typeFilter" style="padding:0.5rem 1rem;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-lg);color:var(--text-primary);font-size:0.875rem">
+                        <option value="">All Types</option>
+                        <option value="USER_LOGIN_SUCCESSFUL">Logins</option>
+                        <option value="AI_DECISION_MADE">AI Decisions</option>
+                        <option value="TIMEFRAME_LOCK_ACQUIRED">Locks</option>
+                        <option value="API_CREDENTIALS_UPDATED">API Changes</option>
+                        <option value="MODE_SWITCHED">Mode Changes</option>
+                    </select>
+                    <button id="logoutBtn" class="btn btn-ghost"><i data-lucide="log-out"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <!-- Log Stats -->
+                <div class="admin-metrics-grid">
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon blue"><i data-lucide="file-text"></i></div>
+                        <div class="admin-metric-label">TOTAL LOGS</div>
+                        <div class="admin-metric-value" id="totalLogs">0</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon green"><i data-lucide="check-circle"></i></div>
+                        <div class="admin-metric-label">SUCCESS EVENTS</div>
+                        <div class="admin-metric-value" id="successLogs">0</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon red"><i data-lucide="alert-triangle"></i></div>
+                        <div class="admin-metric-label">ERROR EVENTS</div>
+                        <div class="admin-metric-value" id="errorLogs">0</div>
+                    </div>
+                </div>
+
+                <!-- Logs Table -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i data-lucide="list"></i> System Activity Log</div>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>TIME</th>
+                                    <th>EVENT TYPE</th>
+                                    <th>USER</th>
+                                    <th>DETAILS</th>
+                                    <th>IP ADDRESS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <div class="spinner" style="margin:0 auto 1rem"></div>
+                                            <div class="empty-state-title">Loading logs...</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="admin-pagination">
+                        <div class="admin-pagination-info">
+                            Showing <span id="pageInfo">0</span> logs
+                        </div>
+                        <div class="admin-pagination-buttons">
+                            <button class="admin-pagination-btn" id="prevBtn" onclick="changePage(-1)" disabled>Previous</button>
+                            <span style="padding:0.5rem;color:var(--text-muted)">Page <span id="currentPage">1</span></span>
+                            <button class="admin-pagination-btn" id="nextBtn" onclick="changePage(1)">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const mobileToggle = document.getElementById('mobileToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const logsTableBody = document.getElementById('logsTableBody');
+            const totalLogsEl = document.getElementById('totalLogs');
+            const successLogsEl = document.getElementById('successLogs');
+            const errorLogsEl = document.getElementById('errorLogs');
+            const searchInput = document.getElementById('searchInput');
+            const typeFilter = document.getElementById('typeFilter');
+            const currentPageEl = document.getElementById('currentPage');
+            const pageInfoEl = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            let currentPage = 1;
+            const itemsPerPage = 20;
+            let allLogs = [];
+            let totalLogs = 0;
+            const CONFIG = { apiBaseUrl: '/api/admin' };
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile sidebar toggle
+            mobileToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 1024 && !sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            });
+
+            // Fetch logs
+            async function fetchLogs() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/activity?days=7`);
+                    const result = await response.json();
+
+                    if (result.success && result.reports) {
+                        allLogs = result.reports;
+                        totalLogs = result.reports.length;
+                        renderLogs(allLogs);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch logs:', error);
+                    logsTableBody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="alert-circle" class="empty-state-icon"></i><div class="empty-state-title">Failed to load logs</div><div class="empty-state-text">Check console for details.</div></div></td></tr>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+
+            // Render logs
+            function renderLogs(logs) {
+                if (!logs || logs.length === 0) {
+                    logsTableBody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="file-text" class="empty-state-icon"></i><div class="empty-state-title">No logs found</div><div class="empty-state-text">System activity logs will appear here.</div></div></td></tr>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                logsTableBody.innerHTML = logs.map(log => {
+                    const time = log.created_at ? new Date(log.created_at).toLocaleString() : '-';
+                    const eventType = log.event_type || 'UNKNOWN';
+                    const user = log.user_email || log.admin_email || 'System';
+                    const ip = log.ip_address || '-';
+
+                    // Get details summary
+                    let details = '-';
+                    try {
+                        const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
+                        if (d) {
+                            const parts = [];
+                            if (d.signal) parts.push(`Signal: ${d.signal}`);
+                            if (d.confidence) parts.push(`Confidence: ${d.confidence}%`);
+                            if (d.timeframe) parts.push(`TF: ${d.timeframe}`);
+                            if (d.action) parts.push(d.action);
+                            if (d.ip_address) parts.push(`IP: ${d.ip_address}`);
+                            details = parts.length > 0 ? parts.join(' | ') : JSON.stringify(d).substring(0, 100);
+                        }
+                    } catch (e) {
+                        details = log.details ? String(log.details).substring(0, 100) : '-';
+                    }
+
+                    // Badge color based on event type
+                    let badgeClass = 'badge-neutral';
+                    if (eventType.includes('SUCCESS') || eventType.includes('ACQUIRED')) badgeClass = 'badge-success';
+                    else if (eventType.includes('ERROR') || eventType.includes('FAILED')) badgeClass = 'badge-danger';
+                    else if (eventType.includes('LOGIN') || eventType.includes('AI')) badgeClass = 'badge-info';
+                    else if (eventType.includes('WARNING') || eventType.includes('LOCK')) badgeClass = 'badge-warning';
+
+                    return `<tr>
+                        <td class="text-mono" style="white-space:nowrap">${time}</td>
+                        <td><span class="badge ${badgeClass}">${eventType.replace(/_/g, ' ')}</span></td>
+                        <td>${user}</td>
+                        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${details}">${details}</td>
+                        <td class="text-mono">${ip}</td>
+                    </tr>`;
+                }).join('');
+
+                // Update stats
+                totalLogsEl.textContent = totalLogs;
+                successLogsEl.textContent = logs.filter(l => l.event_type && (l.event_type.includes('SUCCESS') || l.event_type.includes('ACQUIRED') || l.event_type.includes('MADE'))).length;
+                errorLogsEl.textContent = logs.filter(l => l.event_type && (l.event_type.includes('ERROR') || l.event_type.includes('FAILED'))).length;
+
+                currentPageEl.textContent = currentPage;
+                pageInfoEl.textContent = `${((currentPage - 1) * itemsPerPage) + 1}–${Math.min(currentPage * itemsPerPage, totalLogs)} of ${totalLogs}`;
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage * itemsPerPage >= totalLogs;
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Change page
+            window.changePage = function(direction) {
+                const totalPages = Math.ceil(totalLogs / itemsPerPage);
+                const newPage = currentPage + direction;
+                if (newPage >= 1 && newPage <= totalPages) {
+                    currentPage = newPage;
+                    applyFilters();
+                }
+            };
+
+            // Apply filters
+            function applyFilters() {
+                const query = searchInput.value.toLowerCase();
+                const type = typeFilter.value;
+
+                let filtered = allLogs;
+                if (type) filtered = filtered.filter(l => l.event_type === type);
+                if (query) filtered = filtered.filter(l =>
+                    (l.event_type || '').toLowerCase().includes(query) ||
+                    (l.user_email || '').toLowerCase().includes(query) ||
+                    (l.details || '').toLowerCase().includes(query)
+                );
+
+                renderLogs(filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage));
+                totalLogsEl.textContent = filtered.length;
+            }
+
+            searchInput.addEventListener('input', () => { currentPage = 1; applyFilters(); });
+            typeFilter.addEventListener('change', () => { currentPage = 1; applyFilters(); });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to logout?')) return;
+                try {
+                    const response = await fetch('/auth/logout', { method: 'POST' });
+                    if (response.ok) window.location.href = '/admin/login';
+                } catch (error) { console.error('Logout error:', error); }
+            });
+
+            // Initialize
+            fetchLogs();
+            // Auto-refresh every 30 seconds
+            setInterval(fetchLogs, 30000);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - API Config</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/dashboard" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/profile" class="nav-link"><i data-lucide="user"></i> Profile</a>
+                <a href="/api_config" class="nav-link active"><i data-lucide="key"></i> API Config</a>
+                <a href="/login" id="logoutBtn" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="page-container">
+        <div class="dashboard-header">
+            <h1><i data-lucide="key"></i> API Configuration</h1>
+            <p class="dashboard-subtitle">Manage your Binance Futures API credentials</p>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="security-notice">
+            <h3><i data-lucide="shield-check"></i> Security First</h3>
+            <p>Your API credentials are encrypted before storage and never transmitted in plain text. Only you can access your Binance account through these credentials.</p>
+        </div>
+
+        <!-- Status Indicator -->
+        <div class="bot-controls" style="margin-bottom: 1.5rem;">
+            <div class="bot-status">
+                <span class="bot-status-dot stopped" id="statusDot"></span>
+                <span class="bot-status-text stopped" id="statusText">NO CREDENTIALS SAVED</span>
+            </div>
+        </div>
+
+        <!-- Configuration Form -->
+        <div class="config-section">
+            <div class="section-header"><i data-lucide="settings"></i> BINANCE FUTURES API SETTINGS</div>
+
+            <form id="apiConfigForm">
+                <div class="form-group">
+                    <label class="form-label" for="apiKey">API KEY</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="apiKey" class="form-input form-input-monospace" placeholder="Enter your Binance API Key" required autocomplete="off">
+                        <button type="button" class="input-toggle" onclick="togglePassword('apiKey')">Show</button>
+                    </div>
+                    <p class="form-helper">Get your API key from <a href="https://www.binance.com/en/my/settings/api-management" target="_blank">Binance API Management</a></p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="apiSecret">API SECRET</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="apiSecret" class="form-input form-input-monospace" placeholder="Enter your Binance API Secret" required autocomplete="off">
+                        <button type="button" class="input-toggle" onclick="togglePassword('apiSecret')">Show</button>
+                    </div>
+                    <p class="form-helper">Your API Secret is shown only once when you create the key. Save it securely.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">ACCOUNT TYPE</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="accountType" value="demo" checked>
+                            <label for="demoAccount">TESTNET (Paper Trading)</label>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="accountType" value="live">
+                            <label for="liveAccount">LIVE (Real Money)</label>
+                        </label>
+                    </div>
+                    <p class="form-helper"><strong style="color: var(--warning)">LIVE ACCOUNT:</strong> Real money trading involves financial risk. Use at your own discretion.</p>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        <span id="saveSpinner" style="display:none" class="spinner spinner-sm"></span>
+                        <span id="saveText"><i data-lucide="save"></i> Save Credentials</span>
+                    </button>
+                    <button type="button" class="btn btn-danger" id="deleteBtn" onclick="deleteCredentials()" disabled>
+                        <i data-lucide="trash-2"></i> Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Instructions -->
+        <div class="config-section">
+            <div class="section-header"><i data-lucide="book-open"></i> HOW TO GET YOUR BINANCE API KEYS</div>
+            <ol style="margin-left: 1.5rem; line-height: 2; color: var(--text-secondary);">
+                <li>Log into your <strong style="color: var(--text-primary)">Binance account</strong> at binance.com</li>
+                <li>Go to <strong style="color: var(--text-primary)">API Management</strong> in your account settings</li>
+                <li>Create a new API key and label it (e.g., "Trading Bot")</li>
+                <li>Enable <strong style="color: var(--text-primary)">Futures</strong> and <strong style="color: var(--text-primary)">Reading</strong> permissions</li>
+                <li>Copy both the <strong style="color: var(--text-primary)">API Key</strong> and <strong style="color: var(--text-primary)">Secret Key</strong></li>
+                <li>Paste them into the form above and click "Save Credentials"</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/admin/settings">System Settings</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const apiConfigForm = document.getElementById('apiConfigForm');
+            const apiKeyInput = document.getElementById('apiKey');
+            const apiSecretInput = document.getElementById('apiSecret');
+            const saveBtn = document.getElementById('saveBtn');
+            const saveSpinner = document.getElementById('saveSpinner');
+            const saveText = document.getElementById('saveText');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navLinks = document.getElementById('navLinks');
+
+            const CONFIG = { apiBaseUrl: '/api/user' };
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile nav
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                navLinks.classList.toggle('open');
+            });
+
+            function togglePassword(id) {
+                const input = document.getElementById(id);
+                const btn = input.nextElementSibling;
+                if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Hide'; }
+                else { input.type = 'password'; btn.textContent = 'Show'; }
+            }
+            window.togglePassword = togglePassword;
+
+            function showStatus(connected) {
+                if (connected) {
+                    statusDot.className = 'bot-status-dot running';
+                    statusText.className = 'bot-status-text running';
+                    statusText.textContent = 'CREDENTIALS SAVED';
+                    deleteBtn.disabled = false;
+                } else {
+                    statusDot.className = 'bot-status-dot stopped';
+                    statusText.className = 'bot-status-text stopped';
+                    statusText.textContent = 'NO CREDENTIALS SAVED';
+                    deleteBtn.disabled = true;
+                }
+            }
+
+            // Load status
+            async function loadStatus() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/api/status`);
+                    const result = await response.json();
+                    showStatus(result.success && result.has_credentials);
+                } catch (e) { console.error('Status check failed:', e); }
+            }
+
+            // Save credentials
+            apiConfigForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const apiKey = apiKeyInput.value.trim();
+                const apiSecret = apiSecretInput.value.trim();
+
+                if (!apiKey || !apiSecret) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Both API Key and API Secret are required.');
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveSpinner.style.display = 'inline-block';
+                saveText.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
+
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/api/save`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            binance_api_key: apiKey,
+                            binance_api_secret: apiSecret
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (typeof showToast !== 'undefined') showToast('success', 'Saved', 'API credentials saved successfully!');
+                        showStatus(true);
+                        apiKeyInput.value = '';
+                        apiSecretInput.value = '';
+                        setTimeout(() => window.location.href = '/dashboard', 2000);
+                    } else {
+                        if (typeof showToast !== 'undefined') showToast('error', 'Failed', result.message || 'Failed to save credentials.');
+                    }
+                } catch (error) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Network error. Please try again.');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveSpinner.style.display = 'none';
+                    saveText.innerHTML = '<i data-lucide="save"></i> Save Credentials';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+
+            // Delete credentials
+            window.deleteCredentials = async function() {
+                if (!confirm('WARNING: This will delete your saved API credentials.\n\nYour bots will stop working.\n\nAre you sure?')) return;
+
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/api/delete`, { method: 'DELETE' });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (typeof showToast !== 'undefined') showToast('info', 'Deleted', 'API credentials deleted.');
+                        showStatus(false);
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        if (typeof showToast !== 'undefined') showToast('error', 'Failed', result.message || 'Failed to delete.');
+                    }
+                } catch (error) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Network error.');
+                }
+            };
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to logout?')) return;
+                try {
+                    const response = await fetch('/auth/logout', { method: 'POST' });
+                    if (response.ok) window.location.href = '/login';
+                } catch (error) { console.error('Logout error:', error); }
+            });
+
+            loadStatus();
+        })();
+    </script>
+</body>
+</html>

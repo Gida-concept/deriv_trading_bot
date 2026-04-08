@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Manage Users</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-sidebar-header">
+                <a href="/admin/panel" class="admin-sidebar-logo">
+                    <img src="https://images.scalebranding.com/quadrant-horse-p-logo-489b84ce-3efc-49f6-b00b-d5a029865810.jpg" alt="Quadrant" style="height:40px;width:auto;border-radius:8px"> Admin
+                </a>
+            </div>
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/panel" class="admin-nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/admin/users" class="admin-nav-link active"><i data-lucide="users"></i> Manage Users</a>
+                <a href="/admin/settings" class="admin-nav-link"><i data-lucide="settings"></i> System Settings</a>
+                <a href="/admin/logs" class="admin-nav-link"><i data-lucide="file-text"></i> Audit Logs</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">A</div>
+                    <div class="admin-user-details">
+                        <div class="admin-user-name">Admin</div>
+                        <div class="admin-user-role">Super Admin</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:1rem">
+                    <button class="admin-mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">
+                        <i data-lucide="menu" style="width:24px;height:24px"></i>
+                    </button>
+                    <h1 class="admin-topbar-title"><i data-lucide="users"></i> Manage Users</h1>
+                </div>
+                <div class="admin-topbar-actions">
+                    <div class="admin-search">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchInput" placeholder="Search email...">
+                    </div>
+                    <select id="statusFilter" style="padding:0.5rem 1rem;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-lg);color:var(--text-primary);font-size:0.875rem">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                    <button id="logoutBtn" class="btn btn-ghost"><i data-lucide="log-out"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <!-- Stats Summary -->
+                <div class="admin-metrics-grid">
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon blue"><i data-lucide="user-plus"></i></div>
+                        <div class="admin-metric-label">TOTAL REGISTERED</div>
+                        <div class="admin-metric-value" id="totalUsersCount">0</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon green"><i data-lucide="user-check"></i></div>
+                        <div class="admin-metric-label">ACTIVE USERS</div>
+                        <div class="admin-metric-value" id="activeUsersCount">0</div>
+                    </div>
+                    <div class="admin-metric-card">
+                        <div class="admin-metric-icon red"><i data-lucide="user-x"></i></div>
+                        <div class="admin-metric-label">DISABLED USERS</div>
+                        <div class="admin-metric-value" id="disabledUsersCount">0</div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i data-lucide="users"></i> All Users</div>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>EMAIL</th>
+                                    <th>STATUS</th>
+                                    <th>JOINED</th>
+                                    <th>TOTAL TRADES</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <div class="spinner" style="margin:0 auto 1rem"></div>
+                                            <div class="empty-state-title">Loading users...</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="admin-pagination">
+                        <div class="admin-pagination-info">
+                            Showing <span id="pageInfo">0</span> users
+                        </div>
+                        <div class="admin-pagination-buttons">
+                            <button class="admin-pagination-btn" id="prevBtn" onclick="changePage(-1)" disabled>Previous</button>
+                            <span style="padding:0.5rem;color:var(--text-muted)">Page <span id="currentPage">1</span></span>
+                            <button class="admin-pagination-btn" id="nextBtn" onclick="changePage(1)">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const mobileToggle = document.getElementById('mobileToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const usersTableBody = document.getElementById('usersTableBody');
+            const totalUsersCountEl = document.getElementById('totalUsersCount');
+            const activeUsersCountEl = document.getElementById('activeUsersCount');
+            const disabledUsersCountEl = document.getElementById('disabledUsersCount');
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const currentPageEl = document.getElementById('currentPage');
+            const pageInfoEl = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            let currentPage = 1;
+            const itemsPerPage = 10;
+            let allUsers = [];
+            let totalUsers = 0;
+            const CONFIG = { apiBaseUrl: '/api/admin' };
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile sidebar toggle
+            mobileToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 1024 && !sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            });
+
+            // Fetch users
+            async function fetchUsersList() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/users/list?page=${currentPage}&limit=${itemsPerPage}`);
+                    const result = await response.json();
+
+                    if (result.success && result.users) {
+                        allUsers = result.users;
+                        totalUsers = result.pagination?.total || result.users.length;
+                        renderTable(result.users);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch users:', error);
+                    usersTableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="alert-circle" class="empty-state-icon"></i><div class="empty-state-title">Failed to load users</div><div class="empty-state-text">Check console for details.</div></div></td></tr>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+
+            // Render table
+            function renderTable(users) {
+                if (!users || users.length === 0) {
+                    usersTableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="users" class="empty-state-icon"></i><div class="empty-state-title">No users found</div><div class="empty-state-text">No users match your search criteria.</div></div></td></tr>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                usersTableBody.innerHTML = users.map(user => {
+                    const statusClass = user.status === 'active' ? 'badge-success' : 'badge-danger';
+                    const statusText = user.status === 'active' ? 'Active' : 'Disabled';
+                    return `<tr>
+                        <td class="text-mono">${user.id || '-'}</td>
+                        <td>${user.email || '-'}</td>
+                        <td><span class="badge ${statusClass}"><span class="badge-dot"></span> ${statusText}</span></td>
+                        <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
+                        <td class="text-mono">${user.total_trades || 0}</td>
+                        <td>
+                            <div class="admin-actions">
+                                <button class="admin-btn-sm view" onclick="viewUser(${user.id})"><i data-lucide="eye" style="width:14px;height:14px"></i> View</button>
+                                <button class="admin-btn-sm edit" onclick="resetPassword(${user.id})"><i data-lucide="key" style="width:14px;height:14px"></i> Reset</button>
+                                <button class="admin-btn-sm delete" onclick="toggleStatus(${user.id}, '${user.status}')">${user.status === 'active' ? 'Ban' : 'Activate'}</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+
+                // Update stats
+                totalUsersCountEl.textContent = totalUsers;
+                activeUsersCountEl.textContent = allUsers.filter(u => u.status === 'active').length;
+                disabledUsersCountEl.textContent = allUsers.filter(u => u.status !== 'active').length;
+                currentPageEl.textContent = currentPage;
+                pageInfoEl.textContent = `${((currentPage - 1) * itemsPerPage) + 1}–${Math.min(currentPage * itemsPerPage, totalUsers)} of ${totalUsers}`;
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage * itemsPerPage >= totalUsers;
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Change page
+            window.changePage = function(direction) {
+                const totalPages = Math.ceil(totalUsers / itemsPerPage);
+                const newPage = currentPage + direction;
+                if (newPage >= 1 && newPage <= totalPages) {
+                    currentPage = newPage;
+                    fetchUsersList();
+                }
+            };
+
+            // Search
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                const filtered = allUsers.filter(u => (u.email || '').toLowerCase().includes(query));
+                renderTable(filtered);
+            });
+
+            // Status filter
+            statusFilter.addEventListener('change', function() {
+                const status = this.value;
+                if (!status) { renderTable(allUsers); return; }
+                renderTable(allUsers.filter(u => u.status === status));
+            });
+
+            // Actions
+            window.viewUser = function(userId) {
+                if (typeof showToast !== 'undefined') showToast('info', 'User Details', `View details for User ID: ${userId}`);
+            };
+
+            window.resetPassword = function(userId) {
+                if (confirm('Send password reset link to this user?')) {
+                    if (typeof showToast !== 'undefined') showToast('success', 'Success', 'Reset link sent successfully!');
+                }
+            };
+
+            window.toggleStatus = async function(userId, currentStatus) {
+                const action = currentStatus === 'active' ? 'Disable' : 'Activate';
+                if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/users/toggle_status`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId, status: currentStatus === 'active' ? 'disabled' : 'active' })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (typeof showToast !== 'undefined') showToast('success', 'Success', `User ${action.toLowerCase()}d successfully.`);
+                        await fetchUsersList();
+                    } else {
+                        if (typeof showToast !== 'undefined') showToast('error', 'Error', result.message || 'Failed to toggle status.');
+                    }
+                } catch (error) {
+                    console.error('Toggle error:', error);
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Network error during operation.');
+                }
+            };
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to logout?')) return;
+                try {
+                    const response = await fetch('/auth/logout', { method: 'POST' });
+                    if (response.ok) window.location.href = '/admin/login';
+                } catch (error) { console.error('Logout error:', error); }
+            });
+
+            // Initialize
+            fetchUsersList();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Verify Email</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card" style="text-align:center">
+            <div class="verify-icon loading" id="verifyIcon" style="width:80px;height:80px;margin:0 auto 1.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <div class="spinner" style="width:32px;height:32px;border-width:3px"></div>
+            </div>
+
+            <h1 id="verifyTitle" style="font-size:1.5rem;font-weight:700;color:var(--text-primary);margin-bottom:0.5rem">Verifying Your Email</h1>
+            <p id="verifyMessage" style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.5rem">Please wait while we verify your email address...</p>
+
+            <div class="alert" id="statusBox" style="display:none;text-align:left"></div>
+
+            <div id="actionButtons" style="display:none;margin-top:1.5rem">
+                <a href="/login" class="btn btn-primary" style="width:100%">Go to Login</a>
+                <a href="/register" class="btn btn-secondary" style="width:100%;margin-top:0.75rem">Back to Register</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const verifyIcon = document.getElementById('verifyIcon');
+            const verifyTitle = document.getElementById('verifyTitle');
+            const verifyMessage = document.getElementById('verifyMessage');
+            const statusBox = document.getElementById('statusBox');
+            const actionButtons = document.getElementById('actionButtons');
+
+            function getQueryParam(param) {
+                return new URLSearchParams(window.location.search).get(param);
+            }
+
+            function showStatus(message, type) {
+                const icons = { success: 'check-circle', error: 'alert-circle', info: 'info' };
+                statusBox.className = `alert alert-${type}`;
+                statusBox.innerHTML = `<i data-lucide="${icons[type]}"></i><span>${message}</span>`;
+                statusBox.style.display = 'flex';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            function setState(state, message) {
+                if (state === 'loading') {
+                    verifyIcon.className = 'verify-icon loading';
+                    verifyIcon.innerHTML = '<div class="spinner" style="width:32px;height:32px;border-width:3px"></div>';
+                    verifyIcon.style.background = 'var(--info-bg)';
+                    verifyIcon.style.color = 'var(--info)';
+                    verifyTitle.textContent = 'Verifying Your Email';
+                    verifyMessage.textContent = message || 'Please wait while we verify your email address...';
+                    statusBox.style.display = 'none';
+                    actionButtons.style.display = 'none';
+                } else if (state === 'success') {
+                    verifyIcon.className = 'verify-icon success';
+                    verifyIcon.innerHTML = '<i data-lucide="check-circle" style="width:40px;height:40px"></i>';
+                    verifyIcon.style.background = 'var(--success-bg)';
+                    verifyIcon.style.color = 'var(--success)';
+                    verifyIcon.style.border = '2px solid var(--border-success)';
+                    verifyTitle.textContent = 'Email Verified!';
+                    verifyMessage.textContent = 'Your email has been successfully verified. You can now log in to your account.';
+                    if (message) showStatus(message, 'success');
+                    actionButtons.style.display = 'block';
+                } else if (state === 'error') {
+                    verifyIcon.className = 'verify-icon error';
+                    verifyIcon.innerHTML = '<i data-lucide="x-circle" style="width:40px;height:40px"></i>';
+                    verifyIcon.style.background = 'var(--danger-bg)';
+                    verifyIcon.style.color = 'var(--danger)';
+                    verifyIcon.style.border = '2px solid var(--border-danger)';
+                    verifyTitle.textContent = 'Verification Failed';
+                    verifyMessage.textContent = 'We could not verify your email. Please try again or request a new verification link.';
+                    if (message) showStatus(message, 'error');
+                    actionButtons.style.display = 'block';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            async function verifyEmail() {
+                const token = getQueryParam('token');
+                const userId = getQueryParam('user_id');
+
+                if (!token || !userId) {
+                    setState('error', 'Invalid verification link. Missing token or user ID.');
+                    return;
+                }
+
+                setState('loading');
+
+                try {
+                    const response = await fetch(`/auth/verify-email?token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(userId)}`, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        setState('success', result.message);
+                        setTimeout(() => { window.location.href = '/login'; }, 4000);
+                    } else {
+                        setState('error', result.message || 'Verification failed.');
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    setState('error', 'Network error. Please check your connection and try again.');
+                }
+            }
+
+            verifyEmail();
+        })();
+    </script>
+</body>
+</html>

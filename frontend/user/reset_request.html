@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Reset Password</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .auth-page { padding-top: 5rem; padding-bottom: 5rem; }
+    </style>
+</head>
+<body>
+    <!-- Simplified Nav (Unauthenticated) -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/login" class="nav-link">Login</a>
+                <a href="/register" class="nav-link">Register</a>
+                <a href="/reset_request" class="nav-link active">Reset</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon"><i data-lucide="key-round" style="width:28px;height:28px"></i></div>
+                <h1>Reset Password</h1>
+                <p>Enter your email to receive reset instructions</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="alert alert-info">
+                <i data-lucide="info"></i>
+                <span>We'll send a secure link to your email. The link expires in <strong>1 hour</strong> for security.</span>
+            </div>
+
+            <form class="auth-form" id="resetForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                        <i data-lucide="mail" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none"></i>
+                    </div>
+                    <p class="form-helper">This must match your registered account email</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span id="submitSpinner" style="display:none" class="spinner spinner-sm"></span>
+                    <span id="submitText"><i data-lucide="send"></i> Send Reset Link</span>
+                </button>
+            </form>
+
+            <div class="auth-footer-links">
+                Remember your password? <a href="/login">Sign in</a>
+            </div>
+            <div class="auth-footer-links" style="margin-top:0.5rem">
+                Don't have an account? <a href="/register">Create one</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const resetForm = document.getElementById('resetForm');
+            const emailInput = document.getElementById('email');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitSpinner = document.getElementById('submitSpinner');
+            const submitText = document.getElementById('submitText');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            function showAlert(type, message) {
+                const container = document.getElementById('alertContainer');
+                const icons = { success: 'check-circle', error: 'alert-circle', warning: 'alert-triangle', info: 'info' };
+                container.innerHTML = `<div class="alert alert-${type}"><i data-lucide="${icons[type]}"></i><span>${message}</span></div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            resetForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const email = emailInput.value.trim().toLowerCase();
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showAlert('error', 'Please enter a valid email address.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitSpinner.style.display = 'inline-block';
+                submitText.innerHTML = '<span class="spinner spinner-sm"></span> Sending...';
+
+                try {
+                    const response = await fetch('/auth/reset_request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('success', "If an account exists with that email, we've sent a password reset link.");
+                        submitBtn.disabled = true;
+                        submitText.innerHTML = '<i data-lucide="check"></i> Link Sent';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                        setTimeout(() => window.location.href = '/login', 4000);
+                    } else {
+                        showAlert('error', result.message || result.error || 'Failed to send reset link.');
+                        submitBtn.disabled = false;
+                        submitSpinner.style.display = 'none';
+                        submitText.innerHTML = '<i data-lucide="send"></i> Send Reset Link';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                } catch (error) {
+                    showAlert('error', 'Network error. Please check your connection and try again.');
+                    submitBtn.disabled = false;
+                    submitSpinner.style.display = 'none';
+                    submitText.innerHTML = '<i data-lucide="send"></i> Send Reset Link';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

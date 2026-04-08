@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Trading Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/dashboard" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="/dashboard" class="nav-link active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/profile" class="nav-link"><i data-lucide="user"></i> Profile</a>
+                <a href="/api_config" class="nav-link"><i data-lucide="key"></i> API Config</a>
+                <a href="/login" id="logoutBtn" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Dashboard Content -->
+    <div class="page-container">
+        <div class="dashboard-header">
+            <h1><i data-lucide="bar-chart-3"></i> Trading Dashboard</h1>
+            <p class="dashboard-subtitle">Monitor your bot performance and open positions</p>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">TOTAL TRADES</div>
+                <div class="metric-value" id="totalTrades">0</div>
+                <div class="metric-change neutral" id="totalTradesChange"><i data-lucide="minus" style="width:14px;height:14px"></i> 0%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">NET PnL</div>
+                <div class="metric-value" id="netPnl">$0.00</div>
+                <div class="metric-change neutral" id="netPnlChange"><i data-lucide="minus" style="width:14px;height:14px"></i> 0.00%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">WIN RATE</div>
+                <div class="metric-value" id="winRate">0.0%</div>
+                <div class="metric-change neutral" id="winRateChange">Last 24 hours</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">ACTIVE BOTS</div>
+                <div class="metric-value" id="activeBots">0</div>
+                <div class="metric-change neutral" id="activeBotsChange">Timeframes running</div>
+            </div>
+        </div>
+
+        <!-- Bot Controls -->
+        <div class="bot-controls">
+            <div class="bot-status">
+                <span class="bot-status-dot stopped" id="botStatusDot"></span>
+                <span class="bot-status-text stopped" id="botStatusText">STOPPED</span>
+            </div>
+            <div id="activeBotsList" class="active-bots-list"></div>
+            <div class="mode-selector">
+                <button class="mode-option active" data-mode="demo" onclick="setMode('demo')">TESTNET</button>
+                <button class="mode-option" data-mode="live" onclick="setMode('live')">LIVE</button>
+            </div>
+            <div class="btn-group">
+                <button id="startBotBtn" class="btn btn-success" onclick="startBot()">
+                    <i data-lucide="play"></i> Start Bot
+                </button>
+                <button id="stopBotBtn" class="btn btn-danger" onclick="stopBot()" disabled>
+                    <i data-lucide="square"></i> Stop Bot
+                </button>
+            </div>
+        </div>
+
+        <!-- Open Positions -->
+        <div class="open-trades-section" id="openTradesSection" style="display: none;">
+            <div class="section-header">
+                <i data-lucide="activity"></i>
+                OPEN POSITIONS (<span id="openTradesCount">0</span>)
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SYMBOL</th>
+                            <th>SIDE</th>
+                            <th>LEVERAGE</th>
+                            <th>ENTRY</th>
+                            <th>MARK</th>
+                            <th>SIZE</th>
+                            <th>PnL</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="openTradesTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Shared AI Signals -->
+        <div class="trade-history-section" style="margin-bottom: 1.5rem;">
+            <div class="section-header">
+                <i data-lucide="radio"></i>
+                AI SIGNALS (LATEST)
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>TIME</th>
+                            <th>SYMBOL</th>
+                            <th>SIGNAL</th>
+                            <th>CONFIDENCE</th>
+                            <th>ENTRY</th>
+                            <th>SL</th>
+                            <th>TP</th>
+                            <th>TIMEFRAME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="signalsTable">
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i data-lucide="radio" class="empty-state-icon"></i>
+                                    <div class="empty-state-title">No signals yet</div>
+                                    <div class="empty-state-text">Start the bot to generate AI signals</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Trade History -->
+        <div class="trade-history-section">
+            <div class="section-header">
+                <i data-lucide="clock"></i>
+                RECENT TRADE HISTORY
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>TIME</th>
+                            <th>SYMBOL</th>
+                            <th>SIDE</th>
+                            <th>ENTRY</th>
+                            <th>EXIT</th>
+                            <th>SIZE</th>
+                            <th>PnL</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentTradesTable">
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i data-lucide="inbox" class="empty-state-icon"></i>
+                                    <div class="empty-state-title">No trades yet</div>
+                                    <div class="empty-state-text">Start your bot to begin trading!</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/admin/settings">System Settings</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const botStatusDot = document.getElementById('botStatusDot');
+            const botStatusText = document.getElementById('botStatusText');
+            const startBotBtn = document.getElementById('startBotBtn');
+            const stopBotBtn = document.getElementById('stopBotBtn');
+            const totalTradesEl = document.getElementById('totalTrades');
+            const netPnlEl = document.getElementById('netPnl');
+            const winRateEl = document.getElementById('winRate');
+            const activeBotsEl = document.getElementById('activeBots');
+            const openTradesSection = document.getElementById('openTradesSection');
+            const openTradesTable = document.getElementById('openTradesTable');
+            const openTradesCount = document.getElementById('openTradesCount');
+            const recentTradesTable = document.getElementById('recentTradesTable');
+            const toastContainer = document.getElementById('toastContainer');
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navLinks = document.getElementById('navLinks');
+
+            let pollingInterval = null;
+            let botIsRunning = false;
+            let currentMode = 'demo';
+            let previousTradeIds = new Set();
+
+            const CONFIG = {
+                apiBaseUrl: '/api/user',
+                pollingIntervalMs: 5000,
+                maxRecentTrades: 10
+            };
+
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile nav toggle
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                navLinks.classList.toggle('open');
+            });
+
+            // Toast notification system
+            function showToast(type, title, message, duration = 5000) {
+                const icons = {
+                    success: '<i data-lucide="check-circle" class="toast-icon"></i>',
+                    error: '<i data-lucide="alert-circle" class="toast-icon"></i>',
+                    warning: '<i data-lucide="alert-triangle" class="toast-icon"></i>',
+                    info: '<i data-lucide="info" class="toast-icon"></i>'
+                };
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = `
+                    ${icons[type] || icons.info}
+                    <div class="toast-content">
+                        <div class="toast-title">${title}</div>
+                        <div class="toast-message">${message}</div>
+                    </div>
+                    <button class="toast-close" onclick="this.parentElement.classList.add('removing'); setTimeout(() => this.parentElement.remove(), 300)">
+                        <i data-lucide="x" style="width:16px;height:16px"></i>
+                    </button>
+                `;
+                toastContainer.appendChild(toast);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.classList.add('removing');
+                        setTimeout(() => toast.remove(), 300);
+                    }
+                }, duration);
+            }
+            window.showToast = showToast;
+
+            // Set account mode
+            window.setMode = function(mode) {
+                currentMode = mode;
+                document.querySelectorAll('.mode-option').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === mode);
+                });
+            };
+
+            // Update bot status UI
+            function updateBotStatus(running) {
+                botIsRunning = running;
+                if (running) {
+                    botStatusDot.className = 'bot-status-dot running';
+                    botStatusText.className = 'bot-status-text running';
+                    botStatusText.textContent = 'RUNNING';
+                    startBotBtn.disabled = true;
+                    startBotBtn.classList.add('btn-disabled');
+                    stopBotBtn.disabled = false;
+                    stopBotBtn.classList.remove('btn-disabled');
+                } else {
+                    botStatusDot.className = 'bot-status-dot stopped';
+                    botStatusText.className = 'bot-status-text stopped';
+                    botStatusText.textContent = 'STOPPED';
+                    startBotBtn.disabled = false;
+                    startBotBtn.classList.remove('btn-disabled');
+                    stopBotBtn.disabled = true;
+                    stopBotBtn.classList.add('btn-disabled');
+                }
+            }
+
+            // Start bot
+            window.startBot = async function() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/bot/start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            timeframe: '15m',
+                            demo_live: currentMode,
+                            stake: 10.0,
+                            risk: 1.0,
+                            strategy: 'default'
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showToast('success', 'Bot Started', `Trading in ${currentMode === 'demo' ? 'testnet' : 'live'} mode on 6 pairs`);
+                        updateBotStatus(true);
+                        // Refresh stats after 2 seconds
+                        setTimeout(fetchDashboardStats, 2000);
+                    } else {
+                        showToast('error', 'Failed to Start', result.message || 'Unknown error');
+                    }
+                } catch (error) {
+                    console.error('Start bot error:', error);
+                    showToast('error', 'Error', 'Failed to start bot. Check console.');
+                }
+            };
+
+            // Stop bot
+            window.stopBot = async function() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/bot/stop`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ timeframe: '15m' })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showToast('warning', 'Bot Stopped', 'All positions will be managed by SL/TP');
+                        updateBotStatus(false);
+                    } else {
+                        showToast('error', 'Failed to Stop', result.message || 'Unknown error');
+                    }
+                } catch (error) {
+                    console.error('Stop bot error:', error);
+                    showToast('error', 'Error', 'Failed to stop bot.');
+                }
+            };
+
+            // Fetch dashboard stats
+            async function fetchDashboardStats() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/dashboard`);
+                    const result = await response.json();
+
+                    if (result.success && result.statistics) {
+                        const stats = result.statistics;
+                        totalTradesEl.textContent = stats.total_trades || 0;
+                        const pnl = parseFloat(stats.net_pnl || 0);
+                        netPnlEl.textContent = `$${pnl.toFixed(2)}`;
+                        netPnlEl.style.color = pnl >= 0 ? 'var(--success)' : 'var(--danger)';
+                        winRateEl.textContent = `${(stats.win_rate || 0).toFixed(1)}%`;
+                        activeBotsEl.textContent = stats.active_bots?.count ?? 0;
+                    }
+
+                    await fetchBotStatus();
+                } catch (error) {
+                    console.error('Failed to fetch stats:', error);
+                }
+            }
+
+            // Fetch bot status
+            async function fetchBotStatus() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/bot/status`);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const activeBots = (result.bots || []).filter(b => b.bot_state === 'active');
+                        const running = activeBots.length > 0;
+                        updateBotStatus(running);
+                        displayActiveBots(activeBots);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch bot status:', error);
+                }
+            }
+
+            function displayActiveBots(activeBots) {
+                const container = document.getElementById('activeBotsList');
+                if (!container) return;
+
+                if (!activeBots || activeBots.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = activeBots.map(bot => `
+                    <div class="active-bot-item">
+                        <span class="active-bot-timeframe">${bot.timeframe}</span>
+                        <span class="active-bot-mode">${bot.demo_live}</span>
+                        <button class="btn-stop-bot" onclick="stopSpecificBot('${bot.timeframe}')">
+                            <i data-lucide="square" style="width:12px;height:12px"></i> Stop
+                        </button>
+                    </div>
+                `).join('');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            window.stopSpecificBot = async function(timeframe) {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/bot/stop`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ timeframe })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showToast('warning', 'Bot Stopped', `Bot on ${timeframe} stopped`);
+                        updateBotStatus(false);
+                        displayActiveBots([]);
+                        setTimeout(fetchBotStatus, 1000);
+                    } else {
+                        showToast('error', 'Failed', result.message || 'Unknown error');
+                    }
+                } catch (error) {
+                    console.error('Stop bot error:', error);
+                    showToast('error', 'Error', 'Failed to stop bot.');
+                }
+            };
+
+            // Fetch open trades
+            async function fetchOpenTrades() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/trades?limit=50&status=open`);
+                    const result = await response.json();
+
+                    if (result.success && result.trades && result.trades.length > 0) {
+                        openTradesSection.style.display = 'block';
+                        openTradesCount.textContent = result.trades.length;
+
+                        openTradesTable.innerHTML = result.trades.map(trade => {
+                            const side = (trade.contract_type || '').toUpperCase();
+                            const sideClass = side === 'LONG' ? 'side-long' : 'side-short';
+                            const pnl = parseFloat(trade.profit_loss || 0);
+                            const pnlClass = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                            return `<tr>
+                                <td class="text-mono">${trade.symbol || '-'}</td>
+                                <td class="${sideClass}">${side}</td>
+                                <td class="text-mono">${trade.leverage || '5'}x</td>
+                                <td class="text-mono">${formatPrice(trade.entry_price)}</td>
+                                <td class="text-mono">${formatPrice(trade.exit_price)}</td>
+                                <td class="text-mono">$${parseFloat(trade.stake_amount || 0).toFixed(2)}</td>
+                                <td class="${pnlClass}">$${pnl.toFixed(2)}</td>
+                                <td><span class="badge badge-success"><span class="badge-dot animated"></span> OPEN</span></td>
+                            </tr>`;
+                        }).join('');
+                    } else {
+                        openTradesSection.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch open trades:', error);
+                }
+            }
+
+            // Fetch recent trades
+            async function fetchRecentTrades() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/trades?limit=${CONFIG.maxRecentTrades}&offset=0`);
+                    const result = await response.json();
+
+                    if (result.success && result.trades && result.trades.length > 0) {
+                        checkForNewTrades(result.trades);
+                        displayRecentTrades(result.trades);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch trades:', error);
+                }
+            }
+
+            function checkForNewTrades(trades) {
+                if (!trades) return;
+                const currentIds = new Set(trades.map(t => t.id));
+                const newTrades = [...currentIds].filter(id => !previousTradeIds.has(id));
+                const newlyClosed = [...previousTradeIds].filter(id => !currentIds.has(id));
+
+                if (newTrades.length > 0 && previousTradeIds.size > 0) {
+                    showToast('info', 'New Trades', `${newTrades.length} new trade(s) recorded`);
+                }
+                if (newlyClosed.length > 0 && previousTradeIds.size > 0) {
+                    fetchDashboardStats();
+                }
+                previousTradeIds = currentIds;
+            }
+
+            function displayRecentTrades(trades) {
+                if (!trades || trades.length === 0) {
+                    recentTradesTable.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="inbox" class="empty-state-icon"></i><div class="empty-state-title">No trades yet</div><div class="empty-state-text">Start your bot to begin trading!</div></div></td></tr>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                recentTradesTable.innerHTML = trades.map(trade => {
+                    const time = trade.opened_at ? new Date(trade.opened_at).toLocaleString() : '-';
+                    const side = (trade.contract_type || '').toUpperCase();
+                    const sideClass = side === 'LONG' ? 'side-long' : 'side-short';
+                    const pnl = parseFloat(trade.profit_loss || 0);
+                    const pnlClass = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                    const status = (trade.status || '').toUpperCase();
+                    const statusBadge = status === 'WON' ? 'badge-success' : status === 'LOST' ? 'badge-danger' : 'badge-neutral';
+                    return `<tr>
+                        <td class="text-mono">${time}</td>
+                        <td class="text-mono">${trade.symbol || '-'}</td>
+                        <td class="${sideClass}">${side}</td>
+                        <td class="text-mono">${formatPrice(trade.entry_price)}</td>
+                        <td class="text-mono">${formatPrice(trade.exit_price)}</td>
+                        <td class="text-mono">$${parseFloat(trade.stake_amount || 0).toFixed(2)}</td>
+                        <td class="${pnlClass}">$${pnl.toFixed(2)}</td>
+                        <td><span class="badge ${statusBadge}">${status}</span></td>
+                    </tr>`;
+                }).join('');
+            }
+
+            async function fetchSignals() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/stats/signals?limit=15`);
+                    const result = await response.json();
+
+                    const signalsTable = document.getElementById('signalsTable');
+                    if (!signalsTable) return;
+
+                    if (result.success && result.signals && result.signals.length > 0) {
+                        signalsTable.innerHTML = result.signals.map(sig => {
+                            const time = sig.created_at ? new Date(sig.created_at).toLocaleString() : '-';
+                            const signal = (sig.signal || '').toUpperCase();
+                            const signalClass = signal === 'LONG' ? 'side-long' : signal === 'SHORT' ? 'side-short' : '';
+                            const confColor = (sig.confidence || 0) >= 65 ? 'var(--success)' : (sig.confidence || 0) >= 55 ? 'var(--warning)' : 'var(--text-muted)';
+                            return `<tr>
+                                <td class="text-mono">${time}</td>
+                                <td class="text-mono">${sig.symbol || '-'}</td>
+                                <td class="${signalClass}">${signal}</td>
+                                <td class="text-mono" style="color:${confColor}">${sig.confidence}%</td>
+                                <td class="text-mono">${formatPrice(sig.entry_price)}</td>
+                                <td class="text-mono">${formatPrice(sig.stop_loss)}</td>
+                                <td class="text-mono">${formatPrice(sig.take_profit)}</td>
+                                <td class="text-mono">${sig.timeframe || '-'}</td>
+                            </tr>`;
+                        }).join('');
+                    } else {
+                        signalsTable.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="radio" class="empty-state-icon"></i><div class="empty-state-title">No signals yet</div><div class="empty-state-text">Start the bot to generate AI signals</div></div></td></tr>`;
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch signals:', error);
+                }
+            }
+
+            function formatPrice(price) {
+                if (!price) return '-';
+                const p = parseFloat(price);
+                if (p >= 1000) return p.toFixed(2);
+                if (p >= 1) return p.toFixed(4);
+                return p.toFixed(6);
+            }
+            window.formatPrice = formatPrice;
+
+            // Start polling
+            function startPolling() {
+                clearInterval(pollingInterval);
+                pollingInterval = setInterval(() => {
+                    fetchDashboardStats();
+                    fetchRecentTrades();
+                    fetchOpenTrades();
+                    fetchSignals();
+                }, CONFIG.pollingIntervalMs);
+            }
+
+            async function initialize() {
+                await fetchDashboardStats();
+                await fetchRecentTrades();
+                await fetchOpenTrades();
+                await fetchSignals();
+                startPolling();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                console.log('Dashboard initialized');
+            }
+
+            initialize();
+        })();
+    </script>
+</body>
+</html>

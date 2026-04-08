@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Set New Password</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .auth-page { padding-top: 5rem; padding-bottom: 5rem; }
+    </style>
+</head>
+<body>
+    <!-- Simplified Nav (Unauthenticated) -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/login" class="nav-link">Login</a>
+                <a href="/register" class="nav-link">Register</a>
+                <a href="/reset_request" class="nav-link active">Reset</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-page">
+        <div class="auth-card">
+            <!-- Loading State -->
+            <div id="loadingState" style="text-align:center;padding:2rem 0">
+                <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 1rem"></div>
+                <p style="color:var(--text-muted);font-size:0.875rem">Validating your reset token...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" style="display:none;text-align:center">
+                <div style="width:64px;height:64px;margin:0 auto 1.5rem;border-radius:50%;background:var(--danger-bg);border:2px solid var(--border-danger);display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="x-circle" style="width:32px;height:32px;color:var(--danger)"></i>
+                </div>
+                <h2 style="font-size:1.25rem;font-weight:600;color:var(--text-primary);margin-bottom:0.5rem">Invalid Reset Link</h2>
+                <p id="errorMessageText" style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.5rem">The password reset link is invalid or has expired.</p>
+                <a href="/login" class="btn btn-primary" style="width:100%"><i data-lucide="log-in"></i> Return to Login</a>
+            </div>
+
+            <!-- Reset Form -->
+            <div id="resetFormContainer" style="display:none">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon"><i data-lucide="shield-check" style="width:28px;height:28px"></i></div>
+                    <h1>Set New Password</h1>
+                    <p>Create a strong new password for your account</p>
+                </div>
+
+                <div id="alertContainer"></div>
+
+                <form class="auth-form" id="resetConfirmForm">
+                    <input type="hidden" id="token" value="">
+                    <input type="hidden" id="userId" value="">
+
+                    <div class="form-group">
+                        <label class="form-label" for="newPassword">New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="newPassword" class="form-input" placeholder="Create a strong new password" required minlength="8" oninput="checkStrength(this.value)">
+                            <button type="button" class="input-toggle" onclick="togglePassword('newPassword')">Show</button>
+                        </div>
+                        <div class="password-strength"><div class="password-strength-bar" id="strengthBar"></div></div>
+                        <ul class="password-requirements" id="passwordReqs">
+                            <li id="req-length"><i data-lucide="circle"></i> At least 8 characters</li>
+                            <li id="req-upper"><i data-lucide="circle"></i> One uppercase letter</li>
+                            <li id="req-lower"><i data-lucide="circle"></i> One lowercase letter</li>
+                            <li id="req-number"><i data-lucide="circle"></i> One number</li>
+                            <li id="req-special"><i data-lucide="circle"></i> One special character</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter your new password" required minlength="8">
+                            <button type="button" class="input-toggle" onclick="togglePassword('confirmPassword')">Show</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <span id="submitSpinner" style="display:none" class="spinner spinner-sm"></span>
+                        <span id="submitText"><i data-lucide="lock"></i> Update Password</span>
+                    </button>
+                </form>
+
+                <div class="auth-footer-links">
+                    <a href="/login">← Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const resetFormContainer = document.getElementById('resetFormContainer');
+            const errorMessageText = document.getElementById('errorMessageText');
+            const resetConfirmForm = document.getElementById('resetConfirmForm');
+            const newPasswordInput = document.getElementById('newPassword');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitSpinner = document.getElementById('submitSpinner');
+            const submitText = document.getElementById('submitText');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            function togglePassword(id) {
+                const input = document.getElementById(id);
+                const btn = input.nextElementSibling;
+                if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Hide'; }
+                else { input.type = 'password'; btn.textContent = 'Show'; }
+            }
+            window.togglePassword = togglePassword;
+
+            function showAlert(type, message) {
+                const container = document.getElementById('alertContainer');
+                const icons = { success: 'check-circle', error: 'alert-circle', warning: 'alert-triangle', info: 'info' };
+                container.innerHTML = `<div class="alert alert-${type}"><i data-lucide="${icons[type]}"></i><span>${message}</span></div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            function checkStrength(password) {
+                const bar = document.getElementById('strengthBar');
+                const checks = {
+                    'req-length': password.length >= 8,
+                    'req-upper': /[A-Z]/.test(password),
+                    'req-lower': /[a-z]/.test(password),
+                    'req-number': /[0-9]/.test(password),
+                    'req-special': /[^A-Za-z0-9]/.test(password)
+                };
+                let met = 0;
+                for (const [id, pass] of Object.entries(checks)) {
+                    const li = document.getElementById(id);
+                    if (pass) { li.classList.add('met'); li.querySelector('i').setAttribute('data-lucide', 'check-circle'); met++; }
+                    else { li.classList.remove('met'); li.querySelector('i').setAttribute('data-lucide', 'circle'); }
+                }
+                bar.className = 'password-strength-bar';
+                if (met <= 2) bar.classList.add('weak');
+                else if (met <= 3) bar.classList.add('medium');
+                else bar.classList.add('strong');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Initialize - validate token from URL
+            function init() {
+                const params = new URLSearchParams(window.location.search);
+                const token = params.get('token');
+                const userId = params.get('id');
+
+                if (!token || !userId) {
+                    loadingState.style.display = 'none';
+                    errorMessageText.textContent = 'Invalid reset link. Missing token or user ID.';
+                    errorState.style.display = 'block';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                document.getElementById('token').value = token;
+                document.getElementById('userId').value = userId;
+                loadingState.style.display = 'none';
+                resetFormContainer.style.display = 'block';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Submit new password
+            resetConfirmForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const newPassword = newPasswordInput.value;
+                const confirm = confirmPasswordInput.value;
+
+                if (newPassword.length < 8 || !/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+                    showAlert('error', 'Password must be 8+ chars with letters and numbers.');
+                    return;
+                }
+                if (newPassword !== confirm) {
+                    showAlert('error', 'Passwords do not match.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitSpinner.style.display = 'inline-block';
+                submitText.innerHTML = '<span class="spinner spinner-sm"></span> Updating...';
+
+                try {
+                    const response = await fetch('/auth/reset_confirm', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: parseInt(document.getElementById('userId').value),
+                            token: document.getElementById('token').value,
+                            new_password: newPassword,
+                            confirm_password: confirm
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('success', 'Password updated successfully! Redirecting to login...');
+                        resetConfirmForm.reset();
+                        document.getElementById('strengthBar').className = 'password-strength-bar';
+                        setTimeout(() => window.location.href = '/login', 2500);
+                    } else {
+                        showAlert('error', result.message || result.error || 'Failed to update password.');
+                        submitBtn.disabled = false;
+                        submitSpinner.style.display = 'none';
+                        submitText.innerHTML = '<i data-lucide="lock"></i> Update Password';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                } catch (error) {
+                    showAlert('error', 'Network error. Please try again.');
+                    submitBtn.disabled = false;
+                    submitSpinner.style.display = 'none';
+                    submitText.innerHTML = '<i data-lucide="lock"></i> Update Password';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+
+            init();
+        })();
+    </script>
+</body>
+</html>

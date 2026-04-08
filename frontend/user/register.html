@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Register</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .auth-page { padding-top: 5rem; padding-bottom: 5rem; }
+    </style>
+</head>
+<body>
+    <!-- Simplified Nav (Unauthenticated) -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/login" class="nav-link">Login</a>
+                <a href="/register" class="nav-link active">Register</a>
+                <a href="/reset_request" class="nav-link">Reset</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">B</div>
+                <h1>Create Account</h1>
+                <p>Start your automated trading journey</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div id="verificationNotice" class="alert alert-info" style="display: none;">
+                <i data-lucide="mail"></i>
+                <span><strong>Email Verification Required</strong><br>We've sent a verification link to your email. Please check your inbox.</span>
+            </div>
+
+            <form class="auth-form" id="registerForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                        <i data-lucide="mail" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none"></i>
+                    </div>
+                    <p class="form-helper">This will be used for verification and notifications</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" class="form-input" placeholder="Create a strong password" required autocomplete="new-password" minlength="8" oninput="checkStrength(this.value)">
+                        <button type="button" class="input-toggle" onclick="togglePassword('password')">Show</button>
+                    </div>
+                    <div class="password-strength"><div class="password-strength-bar" id="strengthBar"></div></div>
+                    <ul class="password-requirements" id="passwordReqs">
+                        <li id="req-length"><i data-lucide="circle"></i> At least 8 characters</li>
+                        <li id="req-upper"><i data-lucide="circle"></i> One uppercase letter</li>
+                        <li id="req-lower"><i data-lucide="circle"></i> One lowercase letter</li>
+                        <li id="req-number"><i data-lucide="circle"></i> One number</li>
+                        <li id="req-special"><i data-lucide="circle"></i> One special character</li>
+                    </ul>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="confirmPassword" class="form-input" placeholder="Repeat your password" required autocomplete="new-password">
+                        <button type="button" class="input-toggle" onclick="togglePassword('confirmPassword')">Show</button>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="submitBtn" onclick="handleRegister()">
+                    <span id="submitSpinner" style="display:none" class="spinner spinner-sm"></span>
+                    <span id="submitText">Create Account</span>
+                </button>
+            </form>
+
+            <!-- Resend Verification -->
+            <div id="resendSection" style="display:none; text-align:center; margin-top:1.5rem;">
+                <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:0.75rem;">Didn't receive the email?</p>
+                <button id="resendBtn" class="btn btn-ghost" onclick="resendVerification()" disabled>
+                    <span id="resendSpinner" style="display:none" class="spinner spinner-sm"></span>
+                    <span id="resendText">Resend Verification</span>
+                </button>
+            </div>
+
+            <div class="auth-footer-links">
+                Already have an account? <a href="/login">Sign in</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            const btn = input.nextElementSibling;
+            if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Hide'; }
+            else { input.type = 'password'; btn.textContent = 'Show'; }
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const icons = { success: 'check-circle', error: 'alert-circle', warning: 'alert-triangle', info: 'info' };
+            container.innerHTML = `<div class="alert alert-${type}"><i data-lucide="${icons[type]}"></i><span>${message}</span></div>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function checkStrength(password) {
+            const bar = document.getElementById('strengthBar');
+            const checks = {
+                'req-length': password.length >= 8,
+                'req-upper': /[A-Z]/.test(password),
+                'req-lower': /[a-z]/.test(password),
+                'req-number': /[0-9]/.test(password),
+                'req-special': /[^A-Za-z0-9]/.test(password)
+            };
+            let met = 0;
+            for (const [id, pass] of Object.entries(checks)) {
+                const li = document.getElementById(id);
+                if (pass) { li.classList.add('met'); li.querySelector('i').setAttribute('data-lucide', 'check-circle'); met++; }
+                else { li.classList.remove('met'); li.querySelector('i').setAttribute('data-lucide', 'circle'); }
+            }
+            bar.className = 'password-strength-bar';
+            if (met <= 2) bar.classList.add('weak');
+            else if (met <= 3) bar.classList.add('medium');
+            else bar.classList.add('strong');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        async function handleRegister() {
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const btn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('submitSpinner');
+            const text = document.getElementById('submitText');
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('error', 'Please enter a valid email.'); return; }
+            if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) { showAlert('error', 'Password must be 8+ chars with letters and numbers.'); return; }
+            if (password !== confirm) { showAlert('error', 'Passwords do not match.'); return; }
+
+            btn.disabled = true; spinner.style.display = 'inline-block'; text.textContent = 'Creating account...';
+
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, confirm_password: confirm })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', 'Account created! Check your email for verification.');
+                    document.getElementById('verificationNotice').style.display = 'flex';
+                    document.getElementById('resendSection').style.display = 'block';
+                    document.getElementById('registerForm').reset();
+                    document.getElementById('strengthBar').className = 'password-strength-bar';
+                    setTimeout(() => window.location.href = '/login', 3500);
+                } else {
+                    showAlert('error', result.message || result.error || 'Registration failed.');
+                }
+            } catch (error) {
+                showAlert('error', 'Network error. Please try again.');
+            } finally {
+                btn.disabled = false; spinner.style.display = 'none'; text.textContent = 'Create Account';
+            }
+        }
+
+        async function resendVerification() {
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            if (!email) { showAlert('error', 'Please enter your email first.'); return; }
+
+            const btn = document.getElementById('resendBtn');
+            const spinner = document.getElementById('resendSpinner');
+            const text = document.getElementById('resendText');
+
+            btn.disabled = true; spinner.style.display = 'inline-block'; text.textContent = 'Sending...';
+
+            try {
+                const response = await fetch('/auth/resend_verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('success', 'Verification email resent! Check your inbox.');
+                } else {
+                    showAlert('error', result.message || 'Failed to resend.');
+                }
+            } catch (error) {
+                showAlert('error', 'Network error. Please try again.');
+            } finally {
+                btn.disabled = false; spinner.style.display = 'none'; text.textContent = 'Resend Verification';
+                setTimeout(() => { btn.disabled = false; }, 60000);
+            }
+        }
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    </script>
+</body>
+</html>

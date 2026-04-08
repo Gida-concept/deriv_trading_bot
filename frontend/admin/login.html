@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Admin Login</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .admin-login-page { padding-top: 5rem; padding-bottom: 5rem; }
+    </style>
+</head>
+<body>
+    <div class="admin-login-page">
+        <div class="admin-login-card">
+            <div class="auth-logo">
+                <img src="https://images.scalebranding.com/quadrant-horse-p-logo-489b84ce-3efc-49f6-b00b-d5a029865810.jpg" alt="Quadrant" style="height:40px;width:auto;border-radius:8px">
+                <h1>Admin Access</h1>
+                <p>Sign in to the admin panel</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <form class="auth-form" id="adminLoginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">Admin Email</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" class="form-input" placeholder="admin@example.com" required autocomplete="email">
+                        <i data-lucide="mail" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" class="form-input" placeholder="Enter admin password" required autocomplete="current-password">
+                        <button type="button" class="input-toggle" onclick="togglePassword('password')">Show</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span id="loginSpinner" style="display:none" class="spinner spinner-sm"></span>
+                    <span id="loginText"><i data-lucide="log-in"></i> Sign In</span>
+                </button>
+            </form>
+
+            <div class="auth-footer-links">
+                <a href="/login">← Back to User Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            const loginBtn = document.getElementById('loginBtn');
+            const loginSpinner = document.getElementById('loginSpinner');
+            const loginText = document.getElementById('loginText');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            function togglePassword(id) {
+                const input = document.getElementById(id);
+                const btn = input.nextElementSibling;
+                if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Hide'; }
+                else { input.type = 'password'; btn.textContent = 'Show'; }
+            }
+            window.togglePassword = togglePassword;
+
+            function showAlert(type, message) {
+                const container = document.getElementById('alertContainer');
+                const icons = { success: 'check-circle', error: 'alert-circle', warning: 'alert-triangle', info: 'info' };
+                container.innerHTML = `<div class="alert alert-${type}"><i data-lucide="${icons[type]}"></i><span>${message}</span></div>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            adminLoginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+
+                loginBtn.disabled = true;
+                loginSpinner.style.display = 'inline-block';
+                loginText.innerHTML = '<span class="spinner spinner-sm"></span> Signing in...';
+
+                try {
+                    const response = await fetch('/auth/admin_login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert('success', 'Login successful! Redirecting...');
+                        setTimeout(() => window.location.href = '/admin/panel', 1500);
+                    } else {
+                        showAlert('error', result.message || result.error || 'Invalid credentials.');
+                        loginBtn.disabled = false;
+                        loginSpinner.style.display = 'none';
+                        loginText.innerHTML = '<i data-lucide="log-in"></i> Sign In';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                } catch (error) {
+                    showAlert('error', 'Network error. Please try again.');
+                    loginBtn.disabled = false;
+                    loginSpinner.style.display = 'none';
+                    loginText.innerHTML = '<i data-lucide="log-in"></i> Sign In';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

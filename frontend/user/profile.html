@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - Profile</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="auth-nav">
+        <div class="nav-container">
+            <a href="/dashboard" class="nav-logo">
+                <span class="logo-icon">B</span>
+                Quadrant
+            </a>
+            <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/profile" class="nav-link active"><i data-lucide="user"></i> Profile</a>
+                <a href="/api_config" class="nav-link"><i data-lucide="key"></i> API Config</a>
+                <a href="/login" id="logoutBtn" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="page-container">
+        <div class="dashboard-header">
+            <h1><i data-lucide="user"></i> My Profile</h1>
+            <p class="dashboard-subtitle">Manage your account information and security</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="profile-tabs" id="profileTabs">
+            <button class="profile-tab active" data-tab="account"><i data-lucide="info"></i> Account Info</button>
+            <button class="profile-tab" data-tab="password"><i data-lucide="lock"></i> Change Password</button>
+            <button class="profile-tab" data-tab="danger"><i data-lucide="alert-triangle"></i> Delete Account</button>
+        </div>
+
+        <!-- Account Info Tab -->
+        <div class="profile-tab-content active" id="account-tab">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i data-lucide="user-circle"></i> Account Information</div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">
+                    <div class="profile-avatar" id="profileAvatar">U</div>
+                    <div class="profile-info">
+                        <h2 id="profileEmail">Loading...</h2>
+                        <p id="profileStatus">Checking status...</p>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+                    <div>
+                        <div class="metric-label">ACCOUNT STATUS</div>
+                        <div id="statusBadge" class="badge badge-neutral" style="margin-top:0.5rem"><span class="badge-dot"></span> Loading</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">MEMBER SINCE</div>
+                        <div class="metric-value" id="memberSince" style="font-size:1.25rem">-</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">EMAIL VERIFIED</div>
+                        <div id="emailVerified" class="badge badge-neutral" style="margin-top:0.5rem"><span class="badge-dot"></span> -</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">LAST LOGIN</div>
+                        <div class="metric-value" id="lastLogin" style="font-size:1.25rem">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Tab -->
+        <div class="profile-tab-content" id="password-tab">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i data-lucide="lock"></i> Change Password</div>
+                </div>
+
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label class="form-label" for="currentPassword">Current Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="currentPassword" class="form-input" placeholder="Enter current password" required>
+                            <button type="button" class="input-toggle" onclick="togglePassword('currentPassword')">Show</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="newPassword">New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="newPassword" class="form-input" placeholder="Create new password (min 8 chars)" required minlength="8">
+                            <button type="button" class="input-toggle" onclick="togglePassword('newPassword')">Show</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="confirmNewPassword">Confirm New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmNewPassword" class="form-input" placeholder="Re-enter new password" required minlength="8">
+                            <button type="button" class="input-toggle" onclick="togglePassword('confirmNewPassword')">Show</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="updatePassBtn">
+                        <span id="passSpinner" style="display:none" class="spinner spinner-sm"></span>
+                        <span id="passText"><i data-lucide="shield-check"></i> Update Password</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Account Tab -->
+        <div class="profile-tab-content" id="danger-tab">
+            <div class="card" style="border-color:var(--border-danger)">
+                <div class="card-header">
+                    <div class="card-title" style="color:var(--danger)"><i data-lucide="alert-triangle"></i> Delete Account</div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i data-lucide="alert-triangle" class="alert-icon"></i>
+                    <div>
+                        <strong>WARNING:</strong> Deleting your account will permanently remove all data including trading history, bot configurations, API credentials, and audit logs. This action cannot be undone.
+                    </div>
+                </div>
+
+                <form id="deleteAccountForm">
+                    <div class="form-group">
+                        <label class="form-label" for="deleteConfirmPassword">Confirm with your current password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="deleteConfirmPassword" class="form-input" placeholder="Enter password to confirm deletion" required>
+                            <button type="button" class="input-toggle" onclick="togglePassword('deleteConfirmPassword')">Show</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger" id="deleteAccBtn">
+                        <span id="deleteSpinner" style="display:none" class="spinner spinner-sm"></span>
+                        <span id="deleteText"><i data-lucide="trash-2"></i> Permanently Delete Account</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="auth-footer">
+        <div class="footer-content">
+            <p class="footer-text">&copy; 2026 Binance Futures Trading Bot. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="/help">Help</a>
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/admin/settings">System Settings</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const navLinks = document.getElementById('navLinks');
+            const profileTabs = document.getElementById('profileTabs');
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile nav
+            hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.classList.toggle('active');
+                navLinks.classList.toggle('open');
+            });
+
+            // Toggle password visibility
+            function togglePassword(id) {
+                const input = document.getElementById(id);
+                const btn = input.nextElementSibling;
+                if (input.type === 'password') { input.type = 'text'; btn.textContent = 'Hide'; }
+                else { input.type = 'password'; btn.textContent = 'Show'; }
+            }
+            window.togglePassword = togglePassword;
+
+            // Tab switching
+            profileTabs.querySelectorAll('.profile-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    profileTabs.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            });
+
+            // Load profile
+            async function loadProfile() {
+                try {
+                    const response = await fetch('/api/user/profile');
+                    const result = await response.json();
+
+                    if (result.success && result.profile) {
+                        const p = result.profile;
+                        const email = p.email || 'Unknown';
+                        document.getElementById('profileEmail').textContent = email;
+                        document.getElementById('profileAvatar').textContent = email.charAt(0).toUpperCase();
+
+                        const statusBadge = document.getElementById('statusBadge');
+                        if (p.status === 'active') {
+                            statusBadge.className = 'badge badge-success';
+                            statusBadge.innerHTML = '<span class="badge-dot animated"></span> Active';
+                        } else {
+                            statusBadge.className = 'badge badge-warning';
+                            statusBadge.innerHTML = '<span class="badge-dot"></span> ' + (p.status || 'Unknown');
+                        }
+
+                        const emailBadge = document.getElementById('emailVerified');
+                        if (p.email_verified) {
+                            emailBadge.className = 'badge badge-success';
+                            emailBadge.innerHTML = '<span class="badge-dot animated"></span> Verified';
+                        } else {
+                            emailBadge.className = 'badge badge-danger';
+                            emailBadge.innerHTML = '<span class="badge-dot"></span> Not Verified';
+                        }
+
+                        document.getElementById('memberSince').textContent = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+                        document.getElementById('lastLogin').textContent = p.last_login ? new Date(p.last_login).toLocaleString() : 'Never';
+                        document.getElementById('profileStatus').textContent = p.status === 'active' ? 'Active Account' : 'Account Status: ' + (p.status || 'Unknown');
+                    }
+                } catch (error) {
+                    console.error('Failed to load profile:', error);
+                }
+            }
+
+            // Change password
+            document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const current = document.getElementById('currentPassword').value;
+                const newPass = document.getElementById('newPassword').value;
+                const confirm = document.getElementById('confirmNewPassword').value;
+
+                if (newPass !== confirm) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'New passwords do not match.');
+                    return;
+                }
+
+                const btn = document.getElementById('updatePassBtn');
+                const spinner = document.getElementById('passSpinner');
+                const text = document.getElementById('passText');
+
+                btn.disabled = true; spinner.style.display = 'inline-block'; text.innerHTML = '<span class="spinner spinner-sm"></span> Updating...';
+
+                try {
+                    const response = await fetch('/api/user/profile/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ current_password: current, new_password: newPass })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (typeof showToast !== 'undefined') showToast('success', 'Success', 'Password updated successfully!');
+                        document.getElementById('passwordForm').reset();
+                        setTimeout(() => window.location.href = '/dashboard', 2000);
+                    } else {
+                        if (typeof showToast !== 'undefined') showToast('error', 'Failed', result.message || 'Failed to update password.');
+                    }
+                } catch (error) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Network error. Please try again.');
+                } finally {
+                    btn.disabled = false; spinner.style.display = 'none'; text.innerHTML = '<i data-lucide="shield-check"></i> Update Password';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+
+            // Delete account
+            document.getElementById('deleteAccountForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!confirm('FINAL WARNING: Are you absolutely sure? This cannot be undone!')) return;
+
+                const password = document.getElementById('deleteConfirmPassword').value;
+                if (!password) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Please enter your password to confirm.');
+                    return;
+                }
+
+                const btn = document.getElementById('deleteAccBtn');
+                const spinner = document.getElementById('deleteSpinner');
+                const text = document.getElementById('deleteText');
+
+                btn.disabled = true; spinner.style.display = 'inline-block'; text.innerHTML = '<span class="spinner spinner-sm"></span> Deleting...';
+
+                try {
+                    const response = await fetch('/api/user/profile/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ confirm_password: password })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (typeof showToast !== 'undefined') showToast('success', 'Deleted', 'Account deleted. Redirecting...');
+                        setTimeout(() => window.location.href = '/login', 2500);
+                    } else {
+                        if (typeof showToast !== 'undefined') showToast('error', 'Failed', result.message || 'Failed to delete account.');
+                    }
+                } catch (error) {
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Network error.');
+                } finally {
+                    btn.disabled = false; spinner.style.display = 'none'; text.innerHTML = '<i data-lucide="trash-2"></i> Permanently Delete Account';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to logout?')) return;
+                try {
+                    const response = await fetch('/auth/logout', { method: 'POST' });
+                    if (response.ok) window.location.href = '/login';
+                } catch (error) { console.error('Logout error:', error); }
+            });
+
+            loadProfile();
+        })();
+    </script>
+</body>
+</html>

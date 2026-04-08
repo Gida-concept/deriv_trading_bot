@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant - System Settings</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-sidebar-header">
+                <a href="/admin/panel" class="admin-sidebar-logo">
+                    <img src="https://images.scalebranding.com/quadrant-horse-p-logo-489b84ce-3efc-49f6-b00b-d5a029865810.jpg" alt="Quadrant" style="height:40px;width:auto;border-radius:8px"> Admin
+                </a>
+            </div>
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/panel" class="admin-nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+                <a href="/admin/users" class="admin-nav-link"><i data-lucide="users"></i> Manage Users</a>
+                <a href="/admin/settings" class="admin-nav-link active"><i data-lucide="settings"></i> System Settings</a>
+                <a href="/admin/logs" class="admin-nav-link"><i data-lucide="file-text"></i> Audit Logs</a>
+            </nav>
+            <div class="admin-sidebar-footer">
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">A</div>
+                    <div class="admin-user-details">
+                        <div class="admin-user-name">Admin</div>
+                        <div class="admin-user-role">Super Admin</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <div style="display:flex;align-items:center;gap:1rem">
+                    <button class="admin-mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">
+                        <i data-lucide="menu" style="width:24px;height:24px"></i>
+                    </button>
+                    <h1 class="admin-topbar-title"><i data-lucide="settings"></i> System Settings</h1>
+                </div>
+                <div class="admin-topbar-actions">
+                    <button id="logoutBtn" class="btn btn-ghost"><i data-lucide="log-out"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <!-- Info Notice -->
+                <div class="alert alert-info">
+                    <i data-lucide="info" class="alert-icon"></i>
+                    <span>Configure global trading parameters, risk limits, and system behavior. Changes apply to all users.</span>
+                </div>
+
+                <!-- Risk Management -->
+                <div class="admin-settings-section">
+                    <div class="admin-settings-header">
+                        <i data-lucide="shield-check"></i>
+                        <h3>Risk Management</h3>
+                    </div>
+
+                    <div class="admin-settings-row">
+                        <div class="admin-settings-info">
+                            <h4>Default Risk Percentage</h4>
+                            <p>Default percentage of balance to risk per trade (0.1 - 10%)</p>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:1rem;flex:1;max-width:300px">
+                            <input type="range" id="riskSlider" class="form-input" min="0.1" max="10" step="0.1" value="1.0" oninput="document.getElementById('defaultRiskPercentage').value=this.value" style="flex:1">
+                            <input type="number" id="defaultRiskPercentage" class="form-input" style="width:80px;text-align:center" step="0.1" min="0.1" max="10" value="1.0" oninput="document.getElementById('riskSlider').value=this.value">
+                        </div>
+                    </div>
+
+                    <div class="admin-settings-row">
+                        <div class="admin-settings-info">
+                            <h4>Max Stake Per Trade</h4>
+                            <p>Maximum allowed stake amount for any single trade</p>
+                        </div>
+                        <input type="number" id="maxStakePerTrade" class="form-input" style="width:150px" step="0.01" min="0.01" value="100">
+                    </div>
+
+                    <div class="admin-settings-row">
+                        <div class="admin-settings-info">
+                            <h4>Min Account Balance</h4>
+                            <p>Minimum account balance required to start trading</p>
+                        </div>
+                        <input type="number" id="minAccountBalance" class="form-input" style="width:150px" step="0.01" min="1" value="10">
+                    </div>
+                </div>
+
+                <!-- Trading Configuration -->
+                <div class="admin-settings-section">
+                    <div class="admin-settings-header">
+                        <i data-lucide="bar-chart-3"></i>
+                        <h3>Trading Configuration</h3>
+                    </div>
+
+                    <div class="admin-settings-row" style="flex-direction:column;align-items:stretch">
+                        <div class="admin-settings-info" style="margin-bottom:1rem">
+                            <h4>Active Timeframes</h4>
+                            <p>Click to enable/disable specific timeframes for bot operations</p>
+                        </div>
+                        <div class="timeframe-grid" id="timeframeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.75rem">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Controls -->
+                <div class="admin-settings-section">
+                    <div class="admin-settings-header">
+                        <i data-lucide="toggle-right"></i>
+                        <h3>System Controls</h3>
+                    </div>
+
+                    <div class="admin-settings-row">
+                        <div class="admin-settings-info">
+                            <h4>Maintenance Mode</h4>
+                            <p>Prevent all trading activity when enabled</p>
+                        </div>
+                        <label class="admin-toggle">
+                            <input type="checkbox" id="maintenanceModeToggle">
+                            <span class="admin-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem">
+                    <button type="button" class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">
+                        <span id="saveSpinner" style="display:none" class="spinner spinner-sm"></span>
+                        <span id="saveText"><i data-lucide="save"></i> Save Changes</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetDefaults()">
+                        <i data-lucide="rotate-ccw"></i> Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const mobileToggle = document.getElementById('mobileToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const defaultRiskPercentageEl = document.getElementById('defaultRiskPercentage');
+            const riskSlider = document.getElementById('riskSlider');
+            const maxStakePerTradeEl = document.getElementById('maxStakePerTrade');
+            const minAccountBalanceEl = document.getElementById('minAccountBalance');
+            const maintenanceModeToggle = document.getElementById('maintenanceModeToggle');
+            const timeframeGrid = document.getElementById('timeframeGrid');
+            const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+            const saveSpinner = document.getElementById('saveSpinner');
+            const saveText = document.getElementById('saveText');
+
+            let currentSettings = {};
+            let activeTimeframes = [];
+
+            const availableTimeframes = [
+                { key: '1m', label: '1 Min' },
+                { key: '3m', label: '3 Min' },
+                { key: '5m', label: '5 Min' },
+                { key: '15m', label: '15 Min' },
+                { key: '30m', label: '30 Min' },
+                { key: '1h', label: '1 Hour' },
+                { key: '2h', label: '2 Hours' },
+                { key: '4h', label: '4 Hours' },
+                { key: '6h', label: '6 Hours' },
+                { key: '12h', label: '12 Hours' },
+                { key: '1d', label: '1 Day' }
+            ];
+
+            const CONFIG = { apiBaseUrl: '/api/admin' };
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Mobile sidebar toggle
+            mobileToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 1024 && !sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            });
+
+            // Render timeframe grid
+            function renderTimeframeSelection(timeframes) {
+                timeframeGrid.innerHTML = availableTimeframes.map(tf => {
+                    const isSelected = timeframes.includes(tf.key);
+                    return `<div class="timeframe-option ${isSelected ? 'selected' : ''}" onclick="toggleTimeframe('${tf.key}')" style="padding:0.75rem;background:${isSelected ? 'rgba(14,165,233,0.15)' : 'var(--bg-input)'};border:1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'};border-radius:var(--radius-lg);cursor:pointer;transition:all var(--transition-fast);text-align:center">
+                        <div style="font-weight:600;color:${isSelected ? 'var(--accent)' : 'var(--text-secondary)'};font-size:0.875rem">${tf.label}</div>
+                        <div style="font-size:1.25rem;color:${isSelected ? 'var(--accent)' : 'var(--text-muted)'};margin-top:0.25rem">${isSelected ? '✓' : '○'}</div>
+                    </div>`;
+                }).join('');
+            }
+
+            // Toggle timeframe
+            window.toggleTimeframe = function(tfKey) {
+                const index = activeTimeframes.indexOf(tfKey);
+                if (index > -1) activeTimeframes.splice(index, 1);
+                else activeTimeframes.push(tfKey);
+                renderTimeframeSelection(activeTimeframes);
+            };
+
+            // Fetch settings
+            async function fetchSettings() {
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/settings`);
+                    const result = await response.json();
+
+                    if (result.success && result.settings) {
+                        currentSettings = result.settings;
+                        const s = result.settings;
+
+                        if (s.default_risk_percentage) {
+                            defaultRiskPercentageEl.value = s.default_risk_percentage;
+                            riskSlider.value = s.default_risk_percentage;
+                        }
+                        if (s.max_stake_per_trade) maxStakePerTradeEl.value = s.max_stake_per_trade;
+                        if (s.min_account_balance) minAccountBalanceEl.value = s.min_account_balance;
+                        if (s.maintenance_mode !== undefined) maintenanceModeToggle.checked = s.maintenance_mode;
+
+                        activeTimeframes = s.enabled_timeframes || ['15m'];
+                        renderTimeframeSelection(activeTimeframes);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch settings:', error);
+                }
+            }
+
+            // Save settings
+            window.saveSettings = async function() {
+                saveSettingsBtn.disabled = true;
+                saveSpinner.style.display = 'inline-block';
+                saveText.innerHTML = '<span class="spinner spinner-sm"></span> Saving...';
+
+                try {
+                    const response = await fetch(`${CONFIG.apiBaseUrl}/settings/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            setting_updates: {
+                                default_risk_percentage: parseFloat(defaultRiskPercentageEl.value),
+                                max_stake_per_trade: parseFloat(maxStakePerTradeEl.value),
+                                min_account_balance: parseFloat(minAccountBalanceEl.value),
+                                enabled_timeframes: activeTimeframes,
+                                maintenance_mode: maintenanceModeToggle.checked
+                            }
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (typeof showToast !== 'undefined') showToast('success', 'Saved', 'System settings saved successfully!');
+                        await fetchSettings();
+                    } else {
+                        if (typeof showToast !== 'undefined') showToast('error', 'Failed', result.message || 'Failed to save settings.');
+                    }
+                } catch (error) {
+                    console.error('Save error:', error);
+                    if (typeof showToast !== 'undefined') showToast('error', 'Error', 'Network error during save.');
+                } finally {
+                    saveSettingsBtn.disabled = false;
+                    saveSpinner.style.display = 'none';
+                    saveText.innerHTML = '<i data-lucide="save"></i> Save Changes';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            };
+
+            // Reset defaults
+            window.resetDefaults = function() {
+                if (!confirm('Reset all settings to factory defaults?')) return;
+                defaultRiskPercentageEl.value = 1.0;
+                riskSlider.value = 1.0;
+                maxStakePerTradeEl.value = 100;
+                minAccountBalanceEl.value = 10;
+                maintenanceModeToggle.checked = false;
+                activeTimeframes = ['15m'];
+                renderTimeframeSelection(activeTimeframes);
+            };
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to logout?')) return;
+                try {
+                    const response = await fetch('/auth/logout', { method: 'POST' });
+                    if (response.ok) window.location.href = '/admin/login';
+                } catch (error) { console.error('Logout error:', error); }
+            });
+
+            fetchSettings();
+        })();
+    </script>
+</body>
+</html>
