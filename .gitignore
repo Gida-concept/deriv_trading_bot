@@ -6,7 +6,6 @@ __pycache__/
 *.pyd
 
 # Logs
-logs/
 *.log
 
 # Dependencies
@@ -14,33 +13,6 @@ logs/
 venv/
 env/
 
-# Environment variables
-.env
-.env.local
-*.env.*
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Build
-dist/
-build/
-target/
-*.egg-info/
-
-# Testing
-.pytest_cache/
-.mypy_cache/
+# Original rule preserved
+*.log
 ```

@@ -22,8 +22,8 @@ SIGNAL_PAIRS = [
 
 SIGNAL_TIMEFRAMES = ['15m', '1h']
 
-SIGNAL_CYCLE_SECONDS = 300  # 5 minutes - day trading mode
-SIGNAL_COOLDOWN_SECONDS = 300  # 5 minutes
+SIGNAL_CYCLE_SECONDS = 60  # 1 minute - faster signal generation for testing
+SIGNAL_COOLDOWN_SECONDS = 120  # 2 minutes
 PAIRS_PER_CYCLE = 6  # Analyze all pairs every cycle
 
 BINANCE_PUBLIC_URL = 'https://fapi.binance.com'
@@ -368,7 +368,7 @@ class SignalEngine:
 
                 if atr and current_price > 0:
                     atr_pct = (atr / current_price) * 100
-                    if atr_pct < 0.15:
+                    if atr_pct < 0.10:  # Lower threshold to allow more pairs
                         logger.debug(f"{symbol} [{tf}]: ATR too low ({atr_pct:.2f}%), skipping")
                         continue
 
@@ -429,9 +429,9 @@ class SignalEngine:
             best_tf = max(tf_signals.keys(), key=lambda t: tf_signals[t]['confidence'])
             best_entry = tf_signals[best_tf]
 
-            # Multi-timeframe confirmation: at least 2 timeframes must agree
+            # Multi-timeframe confirmation: at least 1 timeframe (relaxed for more signals)
             agreeing_tfs = [t for t, s in tf_signals.items() if s['signal'] == best_entry['signal']]
-            if len(agreeing_tfs) < 2:
+            if len(agreeing_tfs) < 1:
                 logger.debug(f"{symbol}: No multi-TF confirmation for {best_entry['signal']}, skipping")
                 continue
 
@@ -446,7 +446,7 @@ class SignalEngine:
                 global_best_indicators = best_entry.get('indicators', {})
                 global_best_price_change = best_entry.get('price_change_pct', 0)
 
-        if global_best_signal and global_best_signal.get('signal') in ['LONG', 'SHORT'] and global_best_confidence >= 55:
+        if global_best_signal and global_best_signal.get('signal') in ['LONG', 'SHORT'] and global_best_confidence >= 50:
             # ONE Groq validation per cycle — only on the final best signal
             ai_engine = get_decision_engine()
             rsi_val = float(global_best_indicators.get('rsi_14', 50) or 50)
@@ -487,7 +487,7 @@ class SignalEngine:
 
             global_best_signal['reasoning'] = reasoning
 
-        if global_best_signal and global_best_signal.get('signal') in ['LONG', 'SHORT'] and global_best_confidence >= 55:
+        if global_best_signal and global_best_signal.get('signal') in ['LONG', 'SHORT'] and global_best_confidence >= 50:
             entry_price = global_best_signal.get('entry_price', global_best_klines[-1]['close'] if global_best_klines else 0)
             atr_val = TechnicalIndicators.atr(
                 [k['high'] for k in global_best_klines[-20:]],
