@@ -22,9 +22,8 @@ SIGNAL_PAIRS = [
 
 SIGNAL_TIMEFRAMES = ['15m', '1h']
 
-SIGNAL_CYCLE_SECONDS = 60  # 1 minute - faster signal generation for testing
-SIGNAL_COOLDOWN_SECONDS = 120  # 2 minutes
-PAIRS_PER_CYCLE = 6  # Analyze all pairs every cycle
+SIGNAL_CYCLE_SECONDS = 300  # 5 minutes - one signal cycle every 5 minutes
+SIGNAL_COOLDOWN_SECONDS = 300  # 5 minutes - global cooldown between signals
 
 BINANCE_PUBLIC_URL = 'https://fapi.binance.com'
 
@@ -200,7 +199,6 @@ class SignalEngine:
         self.last_cycle_time = 0
         self._last_cycle_signals = 0
         self._symbol_last_signal = {}
-        self._current_pair_index = 0  # Rotate between pairs
 
     def start(self):
         if self.running:
@@ -323,11 +321,13 @@ class SignalEngine:
     def _generate_cycle(self):
         logger.info("Starting signal generation cycle...")
 
-        # Rotate: pick 2 pairs per cycle, cycle through all 6
-        start_idx = (self._current_pair_index // PAIRS_PER_CYCLE) * PAIRS_PER_CYCLE % len(SIGNAL_PAIRS)
-        current_pairs = SIGNAL_PAIRS[start_idx:start_idx + PAIRS_PER_CYCLE]
-        self._current_pair_index += PAIRS_PER_CYCLE
+        # Check global cooldown - only one signal every 5 minutes
+        if not self._can_generate_signal('GLOBAL'):
+            logger.info(f"Global cooldown active, skipping this cycle")
+            return
 
+        # Rotate: pick all pairs every cycle
+        current_pairs = SIGNAL_PAIRS
         logger.info(f"Analyzing pairs: {current_pairs}")
 
         global_best_symbol = None
@@ -520,6 +520,9 @@ class SignalEngine:
                     global_best_signal.get('reasoning', '')
                 )
             )
+
+            # Update last signal time for GLOBAL cooldown (only one signal every 5 minutes)
+            self._symbol_last_signal['GLOBAL'] = time.time()
 
             logger.info(f"SIGNAL: {global_best_signal['signal']} {global_best_symbol} on {global_best_timeframe} (conf={global_best_confidence}%)")
             logger.info("Next signal cycle in 5 minutes")

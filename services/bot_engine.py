@@ -211,10 +211,9 @@ class BotEngine:
                    WHERE signal IN ('LONG', 'SHORT')
                      AND expires_at > NOW()
                      AND symbol = ANY(%s)
-                     AND timeframe = %s
                    ORDER BY created_at DESC
                    LIMIT 5""",
-                (self.MONITORED_PAIRS, self.timeframe),
+                (self.MONITORED_PAIRS,),
                 fetch_all=True
             )
 

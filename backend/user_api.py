@@ -1037,6 +1037,27 @@ def user_toggle_demo_live():
                 'message': 'Cannot switch modes on stopped bot'
             }), 400
 
+        # Update the demo_live mode in the database
+        execute_query(
+            """UPDATE bot_sessions SET demo_live = %s WHERE id = %s""",
+            (mode, bot_exists[0]['id'])
+        )
+
+        # Restart the bot to apply the new mode
+        from services.process_manager import get_process_manager
+        process_manager = get_process_manager()
+        
+        # Stop the existing bot
+        process_manager.stop_bot(user_id, timeframe)
+        
+        # Small delay to ensure clean shutdown
+        import time
+        time.sleep(2)
+        
+        # Restart the bot with the new mode
+        strategy = bot_exists[0].get('strategy_type', 'default')
+        process_manager.spawn_bot_thread(user_id, timeframe, strategy)
+
         # Log audit event
         log_audit_event(
             user_id=user_id,
@@ -1050,7 +1071,7 @@ def user_toggle_demo_live():
 
         return jsonify({
             'success': True,
-            'message': f'Mode switched to {mode} for timeframe {timeframe}',
+            'message': f'Mode switched to {mode} for timeframe {timeframe}. Bot restarted.',
             'warnings': 'Live trading involves real financial risk. Ensure proper risk management.'
         })
 
