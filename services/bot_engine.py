@@ -51,10 +51,10 @@ class BotEngine:
         self.session_id = None
         self.demo_live_mode = 'demo'
         self.stake_amount = 10.0
-        self.risk_percentage = 1.0
-        self.leverage = 20
-        self.take_profit_percent = 10.0
-        self.stop_loss_percent = 3.0
+        self.risk_percentage = 5.0
+        self.leverage = 10
+        self.take_profit_percent = 3.0
+        self.stop_loss_percent = 2.5
         self.max_concurrent_positions = 1
         self.trades_executed = 0
         self.wins = 0
@@ -127,7 +127,7 @@ class BotEngine:
                 self.session_id = result['id']
                 self.demo_live_mode = result.get('demo_live', 'demo')
                 self.stake_amount = float(result.get('current_stake', 10.0))
-                self.risk_percentage = float(result.get('risk_percentage', 1.0))
+                self.risk_percentage = float(result.get('risk_percentage', 5.0))
                 logger.info(f"Loaded session: stake={self.stake_amount} USDT, risk={self.risk_percentage}%")
         except Exception as e:
             logger.error(f"Failed to load session settings: {e}")
@@ -211,9 +211,10 @@ class BotEngine:
                    WHERE signal IN ('LONG', 'SHORT')
                      AND expires_at > NOW()
                      AND symbol = ANY(%s)
+                     AND timeframe = %s
                    ORDER BY created_at DESC
                    LIMIT 5""",
-                (self.MONITORED_PAIRS,),
+                (self.MONITORED_PAIRS, self.timeframe),
                 fetch_all=True
             )
 
@@ -290,9 +291,21 @@ class BotEngine:
 
             logger.info(f"Following signal: {side} {symbol} on {sig_timeframe} (conf={signal['confidence']}%)")
 
-            quantity = self.client.calculate_quantity(symbol, self.stake_amount, self.leverage)
+            # Get account balance and calculate 5% of it for stake
+            account_balance = self.client.get_account_balance()
+            if account_balance > 0:
+                # Use 5% of account balance as stake amount
+                calculated_stake = account_balance * 0.05
+                logger.info(f"Account balance: {account_balance} USDT, Using 5%: {calculated_stake} USDT")
+                stake_to_use = calculated_stake
+            else:
+                # Fallback to configured stake_amount if balance fetch fails
+                stake_to_use = self.stake_amount
+                logger.warning(f"Could not get account balance, using default stake: {stake_to_use} USDT")
+
+            quantity = self.client.calculate_quantity(symbol, stake_to_use, self.leverage)
             if quantity <= 0:
-                logger.warning(f"{symbol}: Invalid quantity calculated (stake={self.stake_amount}, leverage={self.leverage})")
+                logger.warning(f"{symbol}: Invalid quantity calculated (stake={stake_to_use}, leverage={self.leverage})")
                 self._processed_signal_ids.add(signal['id'])
                 return
 
@@ -425,13 +438,13 @@ class BotEngine:
     def _update_trade_status(self, symbol: str, status: str, pnl: float, pnl_percent: float = 0.0):
         try:
             execute_query(
-                """UPDATE trades SET status = %s, profit_loss = %s, closed_at = %s
+                """UPDATE trades SET status = %s, profit_loss = %s, profit_loss_pct = %s, closed_at = %s
                    WHERE id = (
                        SELECT id FROM trades
                        WHERE user_id = %s AND symbol = %s AND status = 'open'
                        ORDER BY opened_at DESC LIMIT 1
                    )""",
-                (status, pnl, datetime.utcnow(), self.user_id, symbol)
+                (status, pnl, pnl_percent, datetime.utcnow(), self.user_id, symbol)
             )
 
             if status == 'won':

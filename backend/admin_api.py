@@ -429,7 +429,7 @@ def get_all_trades():
         if status_filter and status_filter != 'all':
             rows = execute_query_all(
                 """SELECT t.id, t.user_id, u.email, t.symbol, t.contract_type,
-                          t.stake_amount, t.profit_loss, t.status, t.timeframe,
+                          t.stake_amount, t.profit_loss, t.profit_loss_pct, t.status, t.timeframe,
                           t.opened_at, t.closed_at
                    FROM trades t
                    LEFT JOIN users u ON t.user_id = u.id
@@ -441,7 +441,7 @@ def get_all_trades():
         else:
             rows = execute_query_all(
                 """SELECT t.id, t.user_id, u.email, t.symbol, t.contract_type,
-                          t.stake_amount, t.profit_loss, t.status, t.timeframe,
+                          t.stake_amount, t.profit_loss, t.profit_loss_pct, t.status, t.timeframe,
                           t.opened_at, t.closed_at
                    FROM trades t
                    LEFT JOIN users u ON t.user_id = u.id

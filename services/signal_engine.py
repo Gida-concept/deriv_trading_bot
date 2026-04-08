@@ -495,9 +495,9 @@ class SignalEngine:
                 [k['close'] for k in global_best_klines[-20:]],
                 14
             )
-            atr_mult = 1.5 if atr_val else 0.03
-            sl_distance = atr_val * atr_mult if atr_val else entry_price * 0.03
-            tp_distance = sl_distance * 2.5
+            # Use fixed percentages: 2.5% SL, 3% TP
+            sl_distance = entry_price * 0.025
+            tp_distance = entry_price * 0.03
 
             if global_best_signal['signal'] == 'LONG':
                 stop_loss = entry_price - sl_distance

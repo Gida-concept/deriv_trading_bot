@@ -820,7 +820,7 @@ def user_start_bot():
     Start Binance Futures trading bot.
 
     POST /api/user/bot/start
-    Body: { "timeframe": "15m", "demo_live": "demo", "stake": 10.0, "risk": 1.0 }
+    Body: { "timeframe": "15m", "demo_live": "demo", "stake": 10.0, "risk": 5.0 }
     """
     try:
         user_id = session.get('user_id')
@@ -835,7 +835,7 @@ def user_start_bot():
         timeframe = request.json.get('timeframe', '15m')
         demo_live = request.json.get('demo_live', 'demo')
         stake = request.json.get('stake', 10.0)
-        risk = request.json.get('risk', 1.0)
+        risk = request.json.get('risk', 5.0)
         strategy = request.json.get('strategy', 'default')
 
         # Validate timeframe
@@ -855,7 +855,7 @@ def user_start_bot():
         )
 
         process_manager = get_process_manager()
-        bot_in_memory = (user_id, timeframe.upper()) in process_manager.active_bots
+        bot_in_memory = (user_id, timeframe) in process_manager.active_bots
 
         if existing and existing[0]['bot_state'] == 'active' and bot_in_memory:
             return jsonify({

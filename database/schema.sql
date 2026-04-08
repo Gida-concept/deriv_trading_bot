@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS trades (
     stop_loss DECIMAL(20, 8),
     take_profit DECIMAL(20, 8),
     profit_loss DECIMAL(10,2),
+    profit_loss_pct DECIMAL(10,4),
     duration_seconds INTEGER,
     timeframe VARCHAR(20),
     decision_source VARCHAR(50),
