@@ -50,14 +50,13 @@ class TimeframeLockManager:
             if not user_id or not timeframe:
                 return False, "Missing required parameters"
 
-            timeframe_upper = timeframe.upper()
-            cache_key = f"{user_id}_{timeframe_upper}"
+            cache_key = f"{user_id}_{timeframe}"
 
             # Check memory cache first
             if self._is_cached_locked(cache_key):
                 remaining_seconds = self._get_cache_remaining_time(cache_key)
                 if remaining_seconds > 0:
-                    return False, f"Timeframe {timeframe_upper} locked for {remaining_seconds}s"
+                    return False, f"Timeframe {timeframe} locked for {remaining_seconds}s"
 
             # Acquire database-level lock
             conn = None
@@ -67,13 +66,13 @@ class TimeframeLockManager:
                     cursor.execute("BEGIN")
                     try:
                         self._cleanup_expired_locks(conn)
-                        existing_lock = self._get_active_lock(cursor, user_id, timeframe_upper)
+                        existing_lock = self._get_active_lock(cursor, user_id, timeframe)
 
                         if existing_lock:
                             cursor.execute("ROLLBACK")
-                            return False, f"Timeframe {timeframe_upper} already locked"
+                            return False, f"Timeframe {timeframe} already locked"
 
-                        lock_duration_seconds = self._calculate_lock_duration(timeframe_upper)
+                        lock_duration_seconds = self._calculate_lock_duration(timeframe)
                         lock_expires_at = datetime.utcnow() + timedelta(seconds=lock_duration_seconds)
 
                         cursor.execute(
@@ -87,7 +86,7 @@ class TimeframeLockManager:
                                    last_trade_at = CURRENT_TIMESTAMP,
                                    lock_until = EXCLUDED.lock_until
                                RETURNING id""",
-                            (user_id, timeframe_upper, user_id, timeframe_upper, lock_expires_at)
+                            (user_id, timeframe, user_id, timeframe, lock_expires_at)
                         )
 
                         lock_id = cursor.fetchone()['id']
@@ -98,7 +97,7 @@ class TimeframeLockManager:
                             user_id=user_id,
                             event_type='TIMEFRAME_LOCK_ACQUIRED',
                             details={
-                                'timeframe': timeframe_upper,
+                                'timeframe': timeframe,
                                 'lock_until': lock_expires_at.isoformat(),
                                 'duration_seconds': lock_duration_seconds,
                                 'lock_id': lock_id,
@@ -106,7 +105,7 @@ class TimeframeLockManager:
                             }
                         )
 
-                        logger.info(f"Lock acquired for user {user_id}, timeframe {timeframe_upper}, expires {lock_expires_at}")
+                        logger.info(f"Lock acquired for user {user_id}, timeframe {timeframe}, expires {lock_expires_at}")
                         return True, f"Lock acquired, expires in {lock_duration_seconds}s"
 
                     except Exception as db_error:
@@ -137,8 +136,7 @@ class TimeframeLockManager:
             True if released successfully
         """
         try:
-            timeframe_upper = timeframe.upper()
-            cache_key = f"{user_id}_{timeframe_upper}"
+            cache_key = f"{user_id}_{timeframe}"
 
             conn = None
             try:
@@ -153,7 +151,7 @@ class TimeframeLockManager:
                         """DELETE FROM timeframe_locks 
                            WHERE user_id = %s AND timeframe = %s 
                            AND (lock_until IS NULL OR lock_until > NOW())""",
-                        (user_id, timeframe_upper)
+                        (user_id, timeframe)
                     )
 
                     rows_affected = cursor.rowcount
@@ -163,14 +161,14 @@ class TimeframeLockManager:
                         if cache_key in self.lock_cache:
                             del self.lock_cache[cache_key]
 
-                        logger.info(f"Lock released for user {user_id}, timeframe {timeframe_upper}")
+                        logger.info(f"Lock released for user {user_id}, timeframe {timeframe}")
 
                         # Log release event
                         log_audit_event(
                             user_id=user_id,
                             event_type='TIMEFRAME_LOCK_RELEASED',
                             details={
-                                'timeframe': timeframe_upper,
+                                'timeframe': timeframe,
                                 'status': 'released_on_trade_completion'
                             }
                         )
@@ -178,7 +176,7 @@ class TimeframeLockManager:
                         return True
                     else:
                         logger.warning(
-                            f"No active lock found to release for user {user_id}, timeframe {timeframe_upper}")
+                            f"No active lock found to release for user {user_id}, timeframe {timeframe}")
                         return False
 
             except Exception as e:
@@ -329,7 +327,7 @@ class TimeframeLockManager:
                    WHERE user_id = %s AND timeframe = %s
                    AND (lock_until IS NULL OR lock_until > NOW())
                    LIMIT 1""",
-                (user_id, timeframe.upper()),
+                (user_id, timeframe),
                 fetch_all=True
             )
 
@@ -349,7 +347,7 @@ class TimeframeLockManager:
                     'lock_until': lock_data.get('lock_until').isoformat() if isinstance(lock_data.get('lock_until'),
                                                                                         datetime) else None,
                     'remaining_seconds': round(remaining, 0) if remaining is not None else None,
-                    'cache_key': f"{user_id}_{timeframe.upper()}"
+                    'cache_key': f"{user_id}_{timeframe}"
                 }
             else:
                 return {
@@ -383,7 +381,7 @@ class TimeframeLockManager:
                         """UPDATE timeframe_locks SET 
                            lock_until = NOW() - INTERVAL '1 minute' -- Expire immediately
                            WHERE user_id = %s AND timeframe = %s""",
-                        (user_id, timeframe.upper())
+                        (user_id, timeframe)
                     )
 
                     logger.warning(f"Force cleared lock for user {user_id}, timeframe {timeframe}. Reason: {reason}")
@@ -392,7 +390,7 @@ class TimeframeLockManager:
                         user_id=user_id,
                         event_type='TIMEFRAME_LOCK_FORCED_CLEAR',
                         details={
-                            'timeframe': timeframe.upper(),
+                            'timeframe': timeframe,
                             'clear_reason': reason,
                             'timestamp': datetime.utcnow().isoformat()
                         }

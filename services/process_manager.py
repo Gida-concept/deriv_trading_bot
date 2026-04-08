@@ -17,13 +17,13 @@ class ProcessManager:
         self._lock = threading.Lock()
 
     def spawn_bot_thread(self, user_id: int, timeframe: str, strategy: str = 'default'):
-        key = (user_id, timeframe.upper())
+        key = (user_id, timeframe)
         with self._lock:
             if key in self.active_bots:
                 logger.warning(f"Bot already running: {key}")
                 return
 
-            bot = get_or_create_bot(user_id, timeframe.upper(), strategy)
+            bot = get_or_create_bot(user_id, timeframe, strategy)
             if not bot:
                 logger.error("Failed to create bot")
                 return
@@ -43,7 +43,7 @@ class ProcessManager:
             logger.info(f"Bot started: user {user_id}, timeframe {timeframe}")
 
     def stop_bot_thread(self, user_id: int, timeframe: str):
-        key = (user_id, timeframe.upper())
+        key = (user_id, timeframe)
         with self._lock:
             bot = self.active_bots.pop(key, None)
 
@@ -61,7 +61,7 @@ class ProcessManager:
         result = []
         with self._lock:
             for (uid, tf), bot in self.active_bots.items():
-                if uid == user_id and (timeframe is None or tf == timeframe.upper()):
+                if uid == user_id and (timeframe is None or tf == timeframe):
                     result.append({
                         "timeframe": tf,
                         "running": getattr(bot, 'running', False),
