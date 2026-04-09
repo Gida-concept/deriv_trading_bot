@@ -81,8 +81,8 @@ try:
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     print("Auth API routes registered at /auth - Registration enabled!")
-    print("✅ Resend Verification Endpoint: /auth/resend_verification")
-    print("✅ Verify Email Endpoint: /auth/verify-email")
+    print("[OK] Resend Verification Endpoint: /auth/resend_verification")
+    print("[OK] Verify Email Endpoint: /auth/verify-email")
 except ImportError as e:
     print("\n" + "=" * 70)
     print("ERROR: FAILED TO IMPORT auth_bp - Registration will NOT work!")
@@ -133,7 +133,7 @@ def is_user_logged_in():
 @app.route('/register')
 @app.route('/verify-email')          # ✅ FIX: Added verify-email route
 @app.route('/reset_request')
-@app.route('/reset_confirm/<path:token>')
+@app.route('/reset_confirm')
 @app.route('/api_config')
 @app.route('/settings')
 @app.route('/profile')

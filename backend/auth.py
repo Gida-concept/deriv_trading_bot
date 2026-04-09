@@ -329,14 +329,6 @@ def login_user(email: str, password: str):
             )
             raise AuthenticationError("Invalid email or password")
 
-        if not verify_password(password, user_data['password_hash']):
-            execute_query(
-                """INSERT INTO auth_tokens (user_id, token_type, ip_address, user_agent, created_at)
-                   VALUES (%s, 'failed_login', %s, %s, NOW())""",
-                (user_data['id'], request.remote_addr, request.headers.get('User-Agent', 'unknown'))
-            )
-            raise AuthenticationError("Invalid email or password")
-
         session.permanent = True
         session['user_id'] = user_data['id']
         session['email'] = user_data['email']
@@ -624,7 +616,7 @@ def request_password_reset(email: str):
                 returning_columns='id'
             )
 
-            reset_link = f"{Config.APP_URL}/reset-password?token={reset_token}&user_id={user_data['id']}"
+            reset_link = f"{Config.APP_URL}/reset_confirm?token={reset_token}&user_id={user_data['id']}"
 
             try:
                 # FIX: Align expiry_hours with token expiry (1 hour)
@@ -692,12 +684,14 @@ def reset_password(user_id: int, token: str, new_password: str, confirm_password
         )
 
         if not token_records:
+            logger.warning(f"Password reset failed: no valid tokens found for user {user_id}")
             raise AuthenticationError("Invalid or expired reset token")
 
         provided_token_hash = hash_token(token)
         valid_token = next((r for r in token_records if hmac.compare_digest(r['token_hash'], provided_token_hash)), None)
 
         if not valid_token:
+            logger.warning(f"Password reset failed: token hash mismatch for user {user_id}")
             raise AuthenticationError("Invalid reset token")
 
         execute_query(

@@ -169,7 +169,7 @@
             function init() {
                 const params = new URLSearchParams(window.location.search);
                 const token = params.get('token');
-                const userId = params.get('id');
+                const userId = params.get('user_id');
 
                 if (!token || !userId) {
                     loadingState.style.display = 'none';

@@ -172,8 +172,25 @@ class BinanceFuturesClient:
         Open a futures position.
         """
         try:
-            # Set leverage
-            self.client.futures_change_leverage(symbol=symbol, leverage=leverage)
+            # Check current leverage
+            try:
+                position_info = self.client.futures_position_information(symbol=symbol)
+                current_leverage = None
+                for pos in position_info:
+                    if pos['symbol'] == symbol:
+                        current_leverage = int(pos.get('leverage', 0))
+                        break
+                logger.info(f"Current leverage for {symbol}: {current_leverage}x, desired: {leverage}x")
+                if current_leverage != leverage:
+                    self.client.futures_change_leverage(symbol=symbol, leverage=leverage)
+                    logger.info(f"Set leverage for {symbol}: {leverage}x")
+                else:
+                    logger.debug(f"Leverage for {symbol} already set to {leverage}x")
+            except Exception as e:
+                logger.warning(f"Could not check current leverage for {symbol}: {e}, setting to {leverage}x")
+                # If can't check, just set it
+                self.client.futures_change_leverage(symbol=symbol, leverage=leverage)
+                logger.info(f"Set leverage for {symbol}: {leverage}x")
 
             # Set margin type to ISOLATED
             try:
@@ -202,40 +219,46 @@ class BinanceFuturesClient:
             }
 
             # Set stop loss with rounded precision
-            if stop_loss:
+            if stop_loss and stop_loss > 0:
                 sl_price = self._round_price(symbol, stop_loss)
-                sl_side = 'SELL' if side == 'LONG' else 'BUY'
-                try:
-                    self.client.futures_create_order(
-                        symbol=symbol,
-                        side=sl_side,
-                        type='STOP_MARKET',
-                        stopPrice=sl_price,
-                        closePosition=True,
-                        timeInForce='GTC'
-                    )
-                    result['stop_loss'] = sl_price
-                    logger.info(f"Set SL for {symbol}: {sl_price}")
-                except BinanceAPIException as e:
-                    logger.error(f"Failed to set SL for {symbol}: {e}")
+                if sl_price > 0:
+                    sl_side = 'SELL' if side == 'LONG' else 'BUY'
+                    try:
+                        self.client.futures_create_order(
+                            symbol=symbol,
+                            side=sl_side,
+                            type='STOP_MARKET',
+                            stopPrice=sl_price,
+                            closePosition=True,
+                            timeInForce='GTC'
+                        )
+                        result['stop_loss'] = sl_price
+                        logger.info(f"Set SL for {symbol}: {sl_price}")
+                    except BinanceAPIException as e:
+                        logger.error(f"Failed to set SL for {symbol}: {e}")
+                else:
+                    logger.warning(f"Invalid SL price for {symbol}: {sl_price}, skipping")
 
             # Set take profit with rounded precision
-            if take_profit:
+            if take_profit and take_profit > 0:
                 tp_price = self._round_price(symbol, take_profit)
-                tp_side = 'SELL' if side == 'LONG' else 'BUY'
-                try:
-                    self.client.futures_create_order(
-                        symbol=symbol,
-                        side=tp_side,
-                        type='TAKE_PROFIT_MARKET',
-                        stopPrice=tp_price,
-                        closePosition=True,
-                        timeInForce='GTC'
-                    )
-                    result['take_profit'] = tp_price
-                    logger.info(f"Set TP for {symbol}: {tp_price}")
-                except BinanceAPIException as e:
-                    logger.error(f"Failed to set TP for {symbol}: {e}")
+                if tp_price > 0:
+                    tp_side = 'SELL' if side == 'LONG' else 'BUY'
+                    try:
+                        self.client.futures_create_order(
+                            symbol=symbol,
+                            side=tp_side,
+                            type='TAKE_PROFIT_MARKET',
+                            stopPrice=tp_price,
+                            closePosition=True,
+                            timeInForce='GTC'
+                        )
+                        result['take_profit'] = tp_price
+                        logger.info(f"Set TP for {symbol}: {tp_price}")
+                    except BinanceAPIException as e:
+                        logger.error(f"Failed to set TP for {symbol}: {e}")
+                else:
+                    logger.warning(f"Invalid TP price for {symbol}: {tp_price}, skipping")
 
             return result
 

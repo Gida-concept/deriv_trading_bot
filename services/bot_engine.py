@@ -52,7 +52,7 @@ class BotEngine:
         self.demo_live_mode = 'demo'
         self.stake_amount = 10.0
         self.risk_percentage = 5.0
-        self.leverage = 20
+        self.leverage = 30
         self.take_profit_percent = 3.0
         self.stop_loss_percent = 2.5
         self.max_concurrent_positions = 1
@@ -87,6 +87,14 @@ class BotEngine:
 
             while self.running:
                 try:
+                    # Check connection status
+                    if not self.client or not self.client.connected:
+                        logger.warning("Binance client not connected, attempting reconnection")
+                        if not await self._establish_connection():
+                            logger.error("Reconnection failed, skipping this cycle")
+                            await self.async_sleep(30)
+                            continue
+
                     await self._check_and_execute_signals()
                     await self._manage_positions()
 
@@ -290,12 +298,13 @@ class BotEngine:
 
             logger.info(f"Following signal: {side} {symbol} on {sig_timeframe} (conf={signal['confidence']}%)")
 
-            # Get account balance and calculate 5% of it for stake
+            # Get account balance and calculate risk_percentage of it for stake
             account_balance = self.client.get_account_balance()
             if account_balance > 0:
-                # Use 5% of account balance as stake amount
-                calculated_stake = account_balance * 0.05
-                logger.info(f"Account balance: {account_balance} USDT, Using 5%: {calculated_stake} USDT")
+                # Use risk_percentage of account balance as stake amount
+                risk_fraction = self.risk_percentage / 100.0
+                calculated_stake = account_balance * risk_fraction
+                logger.info(f"Account balance: {account_balance} USDT, Using {self.risk_percentage}%: {calculated_stake} USDT")
                 stake_to_use = calculated_stake
             else:
                 # Fallback to configured stake_amount if balance fetch fails
@@ -307,6 +316,8 @@ class BotEngine:
                 logger.warning(f"{symbol}: Invalid quantity calculated (stake={stake_to_use}, leverage={self.leverage})")
                 self._processed_signal_ids.add(signal['id'])
                 return
+
+            logger.info(f"Attempting to open {side} {symbol}: qty={quantity}, stake={stake_to_use}, leverage={self.leverage}")
 
             result = self.client.open_position(
                 symbol=symbol,
@@ -335,7 +346,7 @@ class BotEngine:
                     }
                 )
             else:
-                logger.error(f"{symbol}: open_position returned None — trade NOT opened")
+                logger.error(f"{symbol}: open_position failed — result: {result}, trade NOT opened")
 
         except Exception as e:
             logger.error(f"Failed to execute signal for {symbol}: {e}")
